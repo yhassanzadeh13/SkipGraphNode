@@ -4,7 +4,6 @@ SkipNode
 This class represents a single node in the skip graph network. The implementation supports several functionalities that a SkipNode can 
 carry out.These functionalities include:
 * Inserting the node into the network with the help of the introducer node.  
-* Inserting data nodes to the network that have the same address but with different numID and nameID.  
 * Searching by Numerical ID (works in a recursive manner).  
 * Searching by Name ID (works in a recursive manner).  
 
@@ -35,11 +34,6 @@ Description
     
     The method ``` public NodeInfo insertSearch(int,int,int,String) ``` is used to make the search for insertion place work recursive 
     per level. That is, the search at level *i* for neighbors of thisNode is done by recursive calls using java RMI.  
-    
-    This methods works for inserting the node itself the first time it enters the network, and supports inserting data nodes, which
-    are defined to be additional nodes that have the same address as their owner (the node that inserts them) but different numID
-    and nameID. The idea of data nodes is extensible to accommodate the further blockchain implementation requirements, which are
-    not discussed in this file.
     
     ---  
     
