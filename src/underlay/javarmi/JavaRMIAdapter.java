@@ -5,7 +5,7 @@ import underlay.RequestResponse;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
-public class JavaRMIAdapter extends UnicastRemoteObject implements JavaRMIService  {
+public class JavaRMIAdapter extends UnicastRemoteObject implements JavaRMIAdapterInterface {
 
     protected JavaRMIAdapter() throws RemoteException {
         // TODO

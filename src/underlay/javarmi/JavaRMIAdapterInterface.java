@@ -7,7 +7,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 // Exposes a Java RMI service.
-public interface JavaRMIService extends ConnectionAdapter, Remote {
+public interface JavaRMIAdapterInterface extends ConnectionAdapter, Remote {
     RequestResponse searchByNameID(String targetNameID) throws RemoteException;
     RequestResponse searchByNumID(String targetNumID) throws RemoteException;
     RequestResponse nameIDLevelSearch(Integer level, String targetNameID) throws RemoteException;

@@ -22,9 +22,9 @@ public class JavaRMIUnderlay extends Underlay {
     @Override
     public RequestResponse sendMessage(String address, RequestType t, RequestParameters p) {
         // Connect to the remote Java RMI underlay adapter.
-        JavaRMIService remote;
+        JavaRMIAdapterInterface remote;
         try {
-            remote = (JavaRMIService) Naming.lookup("//" + address + "/node");
+            remote = (JavaRMIAdapterInterface) Naming.lookup("//" + address + "/node");
         } catch (Exception e) {
             System.err.println("Could not connect to the remote RMI server.");
             return null;
