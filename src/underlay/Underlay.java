@@ -1,23 +1,39 @@
 package underlay;
 
-import java.rmi.Naming;
-
+/**
+ * Represents the underlay layer of the skip-graph DHT. Handles node-to-node communication.
+ */
 public class Underlay {
 
     private ConnectionAdapter connectionAdapter;
 
+    /**
+     * Constructs the underlay.
+     * @param adapter default connection adapter.
+     */
     public Underlay(ConnectionAdapter adapter) {
         // Initialize & register the underlay connection adapter.
         adapter.construct();
         connectionAdapter = adapter;
     }
 
+    /**
+     * Can be used to update the connection adapter of the underlay layer.
+     * @param newAdapter new connection adapter.
+     */
     public void setConnectionAdapter(ConnectionAdapter newAdapter) {
         if(connectionAdapter != null) connectionAdapter.destruct();
         newAdapter.construct();
         connectionAdapter = newAdapter;
     }
 
+    /**
+     * Can be used to send a message to a remote server that runs the same underlay architecture.
+     * @param address address of the remote server.
+     * @param t type of the request.
+     * @param p parameters of the request.
+     * @return response emitted by the remote server.
+     */
     public RequestResponse sendMessage(String address, RequestType t, RequestParameters p) {
         // Connect to the remote adapter.
         ConnectionAdapter remote = connectionAdapter.remote(address);

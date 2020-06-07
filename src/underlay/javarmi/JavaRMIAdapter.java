@@ -7,8 +7,14 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 
+/**
+ * Java RMI connection adapter implementation.
+ */
 public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAdapter {
 
+    /**
+     * Initializes Java RMI on this machine.
+     */
     @Override
     public void construct() {
         try {
@@ -19,10 +25,11 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
         }
     }
 
-    @Override
-    public void destruct() {
-    }
-
+    /**
+     * Connects to the Java RMI adapter of a remote server.
+     * @param address address of the server in the form of IP:PORT
+     * @return a remote Java RMI adapter.
+     */
     @Override
     public JavaRMIAdapter remote(String address) {
         JavaRMIAdapter remote;
@@ -67,5 +74,9 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
     public RequestResponse updateRightNode(Integer level, String newValue) {
         // TODO
         return null;
+    }
+
+    @Override
+    public void destruct() {
     }
 }
