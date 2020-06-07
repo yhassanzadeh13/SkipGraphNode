@@ -17,6 +17,10 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
 
     private String address;
 
+    protected JavaRMIAdapter() throws RemoteException {
+        // TODO
+    }
+
     /**
      * Initializes Java RMI on this machine.
      * @return whether the construction was successful.
@@ -42,10 +46,10 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
      * @return a remote Java RMI adapter.
      */
     @Override
-    public JavaRMIAdapter remote(String address) {
-        JavaRMIAdapter remote;
+    public ConnectionAdapter remote(String address) {
+        ConnectionAdapter remote;
         try {
-            remote = (JavaRMIAdapter) Naming.lookup("//" + address + "/node");
+            remote = (ConnectionAdapter) Naming.lookup("//" + address + "/node");
         } catch (Exception e) {
             System.err.println("[Java RMI] Could not connect to the remote RMI server!");
             return null;
@@ -58,10 +62,6 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
         return address;
     }
 
-    protected JavaRMIAdapter() throws RemoteException {
-        // TODO
-    }
-
     @Override
     public ResponseParameters searchByNameID(String targetNameID) {
         // TODO
@@ -69,25 +69,25 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
     }
 
     @Override
-    public ResponseParameters searchByNumID(String targetNumID) {
+    public ResponseParameters searchByNumID(int targetNumID) {
         // TODO
         return new AckResponse();
     }
 
     @Override
-    public ResponseParameters nameIDLevelSearch(Integer level, String targetNameID) {
+    public ResponseParameters nameIDLevelSearch(int level, String targetNameID) {
         // TODO
         return new AckResponse();
     }
 
     @Override
-    public ResponseParameters updateLeftNode(Integer level, String newValue) {
+    public ResponseParameters updateLeftNode(int level, String newValue) {
         // TODO
         return new AckResponse();
     }
 
     @Override
-    public ResponseParameters updateRightNode(Integer level, String newValue) {
+    public ResponseParameters updateRightNode(int level, String newValue) {
         // TODO
         return new AckResponse();
     }

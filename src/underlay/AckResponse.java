@@ -1,5 +1,7 @@
 package underlay;
 
+import java.io.Serializable;
+
 /**
  * Represents an empty acknowledgement response.
  */

@@ -1,5 +1,7 @@
 package underlay;
 
+import java.rmi.RemoteException;
+
 /**
  * Represents the underlay layer of the skip-graph DHT. Handles node-to-node communication.
  */
@@ -14,7 +16,11 @@ public class Underlay {
      */
     public Underlay(ConnectionAdapter adapter, int port) {
         // Initialize & register the underlay connection adapter.
-        if(adapter.construct(port)) connectionAdapter = adapter;
+        try {
+            if(adapter.construct(port)) connectionAdapter = adapter;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -23,8 +29,14 @@ public class Underlay {
      * @param port the port that the adapter should be bound to.
      */
     public void setConnectionAdapter(ConnectionAdapter newAdapter, int port) {
-        if(connectionAdapter != null) connectionAdapter.destruct();
-        if(newAdapter.construct(port)) connectionAdapter = newAdapter;
+        if(connectionAdapter != null) {
+            try {
+                connectionAdapter.destruct();
+                if(newAdapter.construct(port)) connectionAdapter = newAdapter;
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -40,7 +52,12 @@ public class Underlay {
             return null;
         }
         // Connect to the remote adapter.
-        ConnectionAdapter remote = connectionAdapter.remote(address);
+        ConnectionAdapter remote = null;
+        try {
+            remote = connectionAdapter.remote(address);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         if(remote == null) {
             System.err.println("[Underlay] Could not send the message.");
             return null;
@@ -51,7 +68,7 @@ public class Underlay {
                 case SearchByNameID:
                     return remote.searchByNameID((String) p.getRequestValue("targetNameID"));
                 case SearchByNumID:
-                    return remote.searchByNumID((String) p.getRequestValue("targetNumID"));
+                    return remote.searchByNumID((Integer) p.getRequestValue("targetNumID"));
                 case NameIDLevelSearch:
                     return remote.nameIDLevelSearch((Integer) p.getRequestValue("level"),
                             (String) p.getRequestValue("targetNameID"));
