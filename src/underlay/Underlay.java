@@ -10,21 +10,21 @@ public class Underlay {
     /**
      * Constructs the underlay.
      * @param adapter default connection adapter.
+     * @param port the port that the adapter should be bound to.
      */
-    public Underlay(ConnectionAdapter adapter) {
+    public Underlay(ConnectionAdapter adapter, int port) {
         // Initialize & register the underlay connection adapter.
-        adapter.construct();
-        connectionAdapter = adapter;
+        if(adapter.construct(port)) connectionAdapter = adapter;
     }
 
     /**
      * Can be used to update the connection adapter of the underlay layer.
      * @param newAdapter new connection adapter.
+     * @param port the port that the adapter should be bound to.
      */
-    public void setConnectionAdapter(ConnectionAdapter newAdapter) {
+    public void setConnectionAdapter(ConnectionAdapter newAdapter, int port) {
         if(connectionAdapter != null) connectionAdapter.destruct();
-        newAdapter.construct();
-        connectionAdapter = newAdapter;
+        if(newAdapter.construct(port)) connectionAdapter = newAdapter;
     }
 
     /**
@@ -34,7 +34,11 @@ public class Underlay {
      * @param p parameters of the request.
      * @return response emitted by the remote server.
      */
-    public RequestResponse sendMessage(String address, RequestType t, RequestParameters p) {
+    public ResponseParameters sendMessage(String address, RequestType t, RequestParameters p) {
+        if(connectionAdapter == null) {
+            System.err.println("[Underlay] Adapter does not exist.");
+            return null;
+        }
         // Connect to the remote adapter.
         ConnectionAdapter remote = connectionAdapter.remote(address);
         if(remote == null) {

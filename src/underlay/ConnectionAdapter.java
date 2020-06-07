@@ -6,24 +6,26 @@ package underlay;
  */
 public interface ConnectionAdapter {
 
-    // Initializes the adapter on the host machine.
-    void construct();
+    // Initializes the adapter on the host machine at the given port.
+    boolean construct(int port);
     // Terminates the adapter service on the host machine.
     void destruct();
     // Connects to the remote machine's adapter.
     ConnectionAdapter remote(String address);
+    // Returns the address of the RPC client.
+    String getAddress();
 
     /**
      * We require each RPC client to be able to handle these skip-graph primitives.
      */
     // Performs a name ID search from this client.
-    RequestResponse searchByNameID(String targetNameID) throws Exception;
+    ResponseParameters searchByNameID(String targetNameID) throws Exception;
     // Performs a numerical ID search from this client.
-    RequestResponse searchByNumID(String targetNumID) throws Exception;
+    ResponseParameters searchByNumID(String targetNumID) throws Exception;
     // Performs a name ID search from this client at the given level.
-    RequestResponse nameIDLevelSearch(Integer level, String targetNameID) throws Exception;
+    ResponseParameters nameIDLevelSearch(Integer level, String targetNameID) throws Exception;
     // Updates the left neighbor of this node at the given level with the new given value.
-    RequestResponse updateLeftNode(Integer level, String newValue) throws Exception;
+    ResponseParameters updateLeftNode(Integer level, String newValue) throws Exception;
     // Updates the right neighbor of this node at the given level with the new given value.
-    RequestResponse updateRightNode(Integer level, String newValue) throws Exception;
+    ResponseParameters updateRightNode(Integer level, String newValue) throws Exception;
 }
