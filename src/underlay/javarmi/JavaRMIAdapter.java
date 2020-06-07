@@ -1,8 +1,8 @@
 package underlay.javarmi;
 
-import underlay.AckResponse;
+import underlay.packets.AckResponse;
 import underlay.ConnectionAdapter;
-import underlay.ResponseParameters;
+import underlay.packets.ResponseParameters;
 
 import java.net.Inet4Address;
 import java.rmi.Naming;
@@ -17,7 +17,7 @@ public class JavaRMIAdapter extends UnicastRemoteObject implements ConnectionAda
 
     private String address;
 
-    protected JavaRMIAdapter() throws RemoteException {
+    public JavaRMIAdapter() throws RemoteException {
         // TODO
     }
 

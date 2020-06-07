@@ -1,4 +1,4 @@
-package underlay;
+package underlay.packets;
 
 import java.io.Serializable;
 

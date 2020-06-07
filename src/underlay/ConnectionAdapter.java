@@ -1,5 +1,7 @@
 package underlay;
 
+import underlay.packets.ResponseParameters;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 

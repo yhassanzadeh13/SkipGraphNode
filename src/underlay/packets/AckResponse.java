@@ -1,9 +1,7 @@
-package underlay;
-
-import java.io.Serializable;
+package underlay.packets;
 
 /**
- * Represents an empty acknowledgement response.
+ * Represents an empty acknowledgement response. Used for testing.
  */
 public class AckResponse implements ResponseParameters {
 

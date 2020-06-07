@@ -1,5 +1,10 @@
 package underlay;
 
+import underlay.javarmi.JavaRMIAdapter;
+import underlay.packets.RequestParameters;
+import underlay.packets.RequestType;
+import underlay.packets.ResponseParameters;
+
 import java.rmi.RemoteException;
 
 /**
@@ -10,32 +15,25 @@ public class Underlay {
     private ConnectionAdapter connectionAdapter;
 
     /**
-     * Constructs the underlay.
-     * @param adapter default connection adapter.
-     * @param port the port that the adapter should be bound to.
+     * Creates and returns a new connection adapter.
+     * @return a new connection adapter.
      */
-    public Underlay(ConnectionAdapter adapter, int port) {
-        // Initialize & register the underlay connection adapter.
-        try {
-            if(adapter.construct(port)) connectionAdapter = adapter;
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+    private static ConnectionAdapter defaultAdapter() throws RemoteException {
+        return new JavaRMIAdapter();
     }
 
     /**
-     * Can be used to update the connection adapter of the underlay layer.
-     * @param newAdapter new connection adapter.
+     * Constructs the underlay.
      * @param port the port that the adapter should be bound to.
      */
-    public void setConnectionAdapter(ConnectionAdapter newAdapter, int port) {
-        if(connectionAdapter != null) {
-            try {
-                connectionAdapter.destruct();
-                if(newAdapter.construct(port)) connectionAdapter = newAdapter;
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+    public Underlay(int port) {
+        // Initialize & register the underlay connection adapter.
+        try {
+            ConnectionAdapter adapter = Underlay.defaultAdapter();
+            if(adapter.construct(port)) connectionAdapter = adapter;
+        } catch (RemoteException e) {
+            System.err.println("[Underlay] Error while initializing the underlay.");
+            e.printStackTrace();
         }
     }
 
