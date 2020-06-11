@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import underlay.ConnectionAdapter;
 
 import java.net.Inet4Address;
-import java.rmi.RemoteException;
 
 /**
  * This test creates two RMI clients on the machine at different ports and checks the
@@ -30,8 +29,8 @@ class JavaRMIAdapterTest {
             remoteAdapter = new JavaRMIAdapter();
             localIP = Inet4Address.getLocalHost().getHostAddress();
             // Make sure that the construction is successful.
-            Assertions.assertTrue(localAdapter.construct(LOCAL_PORT));
-            Assertions.assertTrue(remoteAdapter.construct(REMOTE_PORT));
+            Assertions.assertTrue(localAdapter.initialize(LOCAL_PORT));
+            Assertions.assertTrue(remoteAdapter.initialize(REMOTE_PORT));
         } catch (Exception e) {
             Assertions.fail(e);
         }
@@ -42,11 +41,7 @@ class JavaRMIAdapterTest {
     void remote() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertEquals(remoteAdapter.getAddress(), remote.getAddress());
-        } catch (RemoteException e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertEquals(remoteAdapter.getAddress(), remote.getAddress());
     }
 
     // Checks if the addresses are correctly reported.
@@ -58,11 +53,7 @@ class JavaRMIAdapterTest {
         // Assert that the method returns the correct value when requested from a remote server.
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertEquals(localIP + ":" + REMOTE_PORT, remote.getAddress());
-        } catch (RemoteException e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertEquals(localIP + ":" + REMOTE_PORT, remote.getAddress());
     }
 
     // Check if search by name ID returns a response.
@@ -70,11 +61,7 @@ class JavaRMIAdapterTest {
     void searchByNameID() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertNotNull(remote.searchByNameID(""));
-        } catch (Exception e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertNotNull(remote.searchByNameID(""));
     }
 
     // Check if search by numerical ID returns a response.
@@ -82,11 +69,7 @@ class JavaRMIAdapterTest {
     void searchByNumID() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertNotNull(remote.searchByNumID(0));
-        } catch (Exception e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertNotNull(remote.searchByNumID(0));
     }
 
     // Check if search by name ID (level-based) returns a response.
@@ -94,11 +77,7 @@ class JavaRMIAdapterTest {
     void nameIDLevelSearch() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertNotNull(remote.nameIDLevelSearch(0, ""));
-        } catch (Exception e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertNotNull(remote.nameIDLevelSearch(0, ""));
     }
 
     // Check if requesting to update a lookup table value returns a response.
@@ -106,11 +85,7 @@ class JavaRMIAdapterTest {
     void updateLeftNode() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertNotNull(remote.updateLeftNode(0, ""));
-        } catch (Exception e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertNotNull(remote.updateLeftNode(0, ""));
     }
 
     // Check if requesting to update a lookup table value returns a response.
@@ -118,10 +93,6 @@ class JavaRMIAdapterTest {
     void updateRightNode() {
         ConnectionAdapter remote = localAdapter.remote(localIP + ":" + REMOTE_PORT);
         Assertions.assertNotNull(remote);
-        try {
-            Assertions.assertNotNull(remote.updateRightNode(0, ""));
-        } catch (Exception e) {
-            Assertions.fail(e);
-        }
+        Assertions.assertNotNull(remote.updateRightNode(0, ""));
     }
 }

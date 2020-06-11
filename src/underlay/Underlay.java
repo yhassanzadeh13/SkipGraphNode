@@ -5,8 +5,6 @@ import underlay.packets.RequestParameters;
 import underlay.packets.RequestType;
 import underlay.packets.ResponseParameters;
 
-import java.rmi.RemoteException;
-
 /**
  * Represents the underlay layer of the skip-graph DHT. Handles node-to-node communication.
  */
@@ -18,7 +16,7 @@ public class Underlay {
      * Creates and returns a new connection adapter.
      * @return a new connection adapter.
      */
-    private static ConnectionAdapter defaultAdapter() throws RemoteException {
+    private static ConnectionAdapter defaultAdapter() {
         return new JavaRMIAdapter();
     }
 
@@ -28,13 +26,8 @@ public class Underlay {
      */
     public Underlay(int port) {
         // Initialize & register the underlay connection adapter.
-        try {
-            ConnectionAdapter adapter = Underlay.defaultAdapter();
-            if(adapter.construct(port)) connectionAdapter = adapter;
-        } catch (RemoteException e) {
-            System.err.println("[Underlay] Error while initializing the underlay.");
-            e.printStackTrace();
-        }
+        ConnectionAdapter adapter = Underlay.defaultAdapter();
+        if(adapter.initialize(port)) connectionAdapter = adapter;
     }
 
     /**
@@ -50,12 +43,7 @@ public class Underlay {
             return null;
         }
         // Connect to the remote adapter.
-        ConnectionAdapter remote = null;
-        try {
-            remote = connectionAdapter.remote(address);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
+        ConnectionAdapter remote = connectionAdapter.remote(address);
         if(remote == null) {
             System.err.println("[Underlay] Could not send the message.");
             return null;
