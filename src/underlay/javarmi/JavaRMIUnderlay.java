@@ -92,12 +92,14 @@ public class JavaRMIUnderlay extends Underlay {
      * Terminates the Java RMI underlay service.
      */
     @Override
-    public void terminate() {
+    public boolean terminate() {
         try {
             Naming.unbind("//" + getFullAddress() + "/node");
         } catch (Exception e) {
             System.err.println("[JavaRMIUnderlay] Could not terminate.");
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 }

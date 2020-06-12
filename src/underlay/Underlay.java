@@ -67,8 +67,9 @@ public abstract class Underlay extends RequestHandler {
 
     /**
      * Terminates the underlay.
+     * @return true iff the termination was successful.
      */
-    public abstract void terminate();
+    public abstract boolean terminate();
 
     /**
      * Constructs a new default underlay. Must be initialized.

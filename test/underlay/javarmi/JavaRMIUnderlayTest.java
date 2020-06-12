@@ -6,7 +6,7 @@ import underlay.UnderlayTest;
 
 /**
  * This test creates two Java RMI underlays on the host machine at different ports and checks the
- * connectivity between them. `sendMessage` tests are implemented in the `UnderlayTest` class.
+ * connectivity between them. `sendMessage` and `terminate` tests are implemented in the `UnderlayTest` class.
  */
 class JavaRMIUnderlayTest extends UnderlayTest {
 

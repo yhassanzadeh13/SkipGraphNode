@@ -19,6 +19,7 @@ public class UnderlayTest {
     protected static Underlay localUnderlay;
     protected static Underlay remoteUnderlay;
 
+    // Initializes the underlays.
     @BeforeAll
     static void setUp() {
         localUnderlay = Underlay.newDefaultUnderlay();
@@ -56,9 +57,10 @@ public class UnderlayTest {
         Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateRightNode, r));
     }
 
+    // Terminates the underlays.
     @AfterAll
     static void tearDown() {
-        localUnderlay.terminate();
-        remoteUnderlay.terminate();
+        Assertions.assertTrue(localUnderlay.terminate());
+        Assertions.assertTrue(remoteUnderlay.terminate());
     }
 }

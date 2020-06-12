@@ -101,7 +101,7 @@ public class TCPUnderlay extends Underlay {
      * Terminates the underlay by unbinding the listener from the port.
      */
     @Override
-    public void terminate() {
+    public boolean terminate() {
         try {
             // Unbind from the local port.
             serverSocket.close();
@@ -110,6 +110,8 @@ public class TCPUnderlay extends Underlay {
         } catch (Exception e) {
             System.err.println("[TCPUnderlay] Could not terminate.");
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 }
