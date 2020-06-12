@@ -5,7 +5,10 @@ import underlay.packets.RequestParameters;
 import underlay.packets.RequestType;
 import underlay.packets.ResponseParameters;
 
+import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 
 /**
@@ -85,8 +88,16 @@ public class JavaRMIUnderlay extends Underlay {
         }
     }
 
-    // Java RMI termination is handled automatically.
+    /**
+     * Terminates the Java RMI underlay service.
+     */
     @Override
     public void terminate() {
+        try {
+            Naming.unbind("//" + getFullAddress() + "/node");
+        } catch (Exception e) {
+            System.err.println("[JavaRMIUnderlay] Could not terminate.");
+            e.printStackTrace();
+        }
     }
 }
