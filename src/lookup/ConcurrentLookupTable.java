@@ -11,6 +11,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class ConcurrentLookupTable implements LookupTable {
     private final int numLevels;
     private ReadWriteLock lock;
+    /**
+     * All the neighbors are placed in an arraylist, with EMPTY_NODE for empty nodes.
+     * The formula to get the index of a neighbor is 2*level for a node on the left side
+     * and 2*level+1 for a node on the right side. This is reflected in the getIndex
+     * method.
+     */
     private ArrayList<SkipNodeIdentity> nodes;
 
     private enum direction{
