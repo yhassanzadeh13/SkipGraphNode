@@ -15,8 +15,8 @@ import java.net.UnknownHostException;
  */
 class UnderlayTest {
 
-    private static final int LOCAL_PORT = 9090;
-    private static final int REMOTE_PORT = 9091;
+    private static final int LOCAL_PORT = 9093;
+    private static final int REMOTE_PORT = 9094;
 
     private static Underlay localUnderlay;
     private static Underlay remoteUnderlay;
