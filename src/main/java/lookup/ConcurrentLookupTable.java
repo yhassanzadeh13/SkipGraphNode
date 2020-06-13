@@ -19,7 +19,7 @@ public class ConcurrentLookupTable implements LookupTable {
 
     public ConcurrentLookupTable(int numLevels){
         nodes = new ArrayList<>(2*numLevels);
-        for(int i=0;i<nodes.size();i++){
+        for(int i=0;i<2*numLevels;i++){
             nodes.set(i, LookupTable.EMPTY_NODE);
         }
     }

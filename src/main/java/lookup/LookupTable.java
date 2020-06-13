@@ -3,7 +3,7 @@ package lookup;
 import skipnode.SkipNodeIdentity;
 
 public interface LookupTable {
-    public final SkipNodeIdentity EMPTY_NODE = new SkipNodeIdentity("EMPTY", -1);
+    SkipNodeIdentity EMPTY_NODE = new SkipNodeIdentity("EMPTY", -1);
 
     /**
      * Updates the left neighbor on the given level to be the node
