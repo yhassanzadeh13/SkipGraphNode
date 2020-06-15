@@ -1,9 +1,11 @@
 package underlay.udp;
 
-import underlay.packets.ResponseParameters;
 
 import java.io.*;
 
+/**
+ * Contains various static helper methods to be used by the UDP Underlay implementation.
+ */
 public class UDPUtils {
 
     /**
