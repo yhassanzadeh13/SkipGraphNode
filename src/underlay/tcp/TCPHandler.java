@@ -13,7 +13,7 @@ import java.net.Socket;
  */
 public class TCPHandler implements Runnable {
 
-    // TCP connection. We use this connection to read the request and send back the response.
+    // TCP stream. We use this two-way stream to read the request and send back the response.
     private final Socket incomingConnection;
     // Request handler.
     private final RequestHandler requestHandler;
@@ -23,6 +23,7 @@ public class TCPHandler implements Runnable {
         this.requestHandler = requestHandler;
     }
 
+    // TODO send back an error response when necessary.
     @Override
     public void run() {
         ObjectInputStream requestStream;
@@ -35,7 +36,6 @@ public class TCPHandler implements Runnable {
             System.err.println("[TCPHandler] Could not acquire the streams from the connection.");
             e.printStackTrace();
             return;
-
         }
         // Read the request from the connection.
         TCPRequest request;
@@ -50,7 +50,7 @@ public class TCPHandler implements Runnable {
         ResponseParameters responseParameters = requestHandler.dispatchRequest(request.type, request.parameters);
         // Write the response to the connection.
         try {
-            responseStream.writeObject(new TCPResponse(responseParameters));
+            responseStream.writeObject(responseParameters);
         } catch (IOException e) {
             System.err.println("[TCPHandler] Could not send the response.");
             e.printStackTrace();
