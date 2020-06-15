@@ -3,9 +3,9 @@ package underlay.udp;
 import underlay.packets.ResponseParameters;
 
 /**
- * Used to synchronize the sender thread with the receiver thread at the host. The sender thread will be waiting
- * for a response while the receiver thread receives the response. Using this object, we can transfer the response
- * from the receiver thread to the sender thread.
+ * Used to synchronize the sender thread with the receiver thread at the host. The sender thread (i.e. UDPUnderlay) will
+ * be waiting for a response while the receiver thread (i.e. UDPListener) receives the response. Using this object, we
+ * can transfer the response from the receiver thread to the sender thread.
  */
 public class UDPResponseLock {
 
