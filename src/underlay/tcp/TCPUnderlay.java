@@ -1,6 +1,7 @@
 package underlay.tcp;
 
 import underlay.Underlay;
+import underlay.packets.RequestPacket;
 import underlay.packets.RequestParameters;
 import underlay.packets.RequestType;
 import underlay.packets.ResponseParameters;
@@ -67,7 +68,7 @@ public class TCPUnderlay extends Underlay {
         // Send the request.
         try {
             requestStream = new ObjectOutputStream(remote.getOutputStream());
-            TCPRequest request = new TCPRequest(t, p);
+            RequestPacket request = new RequestPacket(t, p);
             requestStream.writeObject(request);
         } catch(IOException e) {
             System.err.println("[TCPUnderlay] Could not send the request.");

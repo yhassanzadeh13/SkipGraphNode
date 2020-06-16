@@ -1,8 +1,8 @@
 package underlay.udp;
 
 import underlay.RequestHandler;
+import underlay.packets.RequestPacket;
 import underlay.packets.ResponseParameters;
-import underlay.tcp.TCPRequest;
 
 import java.io.IOException;
 import java.net.*;
@@ -40,8 +40,8 @@ public class UDPListener implements Runnable {
                 // Deserialize the packet.
                 Object packetObject = UDPUtils.deserialize(packet.getData(), packet.getLength());
                 // If the packet is a request, handle it in a new `UDPHandler` thread.
-                if(packetObject instanceof TCPRequest) {
-                    TCPRequest request = (TCPRequest) packetObject;
+                if(packetObject instanceof RequestPacket) {
+                    RequestPacket request = (RequestPacket) packetObject;
                     new Thread(new UDPHandler(listenSocket, request, packet.getAddress(), packet.getPort(), requestHandler)).start();
                 } else if(packetObject instanceof ResponseParameters) {
                     // If the packet is a response, dispatch the response to the main thread.

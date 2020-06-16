@@ -1,10 +1,10 @@
 package underlay.udp;
 
 import underlay.Underlay;
+import underlay.packets.RequestPacket;
 import underlay.packets.RequestParameters;
 import underlay.packets.RequestType;
 import underlay.packets.ResponseParameters;
-import underlay.tcp.TCPRequest;
 
 import java.io.IOException;
 import java.net.*;
@@ -71,7 +71,7 @@ public class UDPUnderlay extends Underlay {
             return null;
         }
         // Construct the request.
-        TCPRequest request = new TCPRequest(t, p);
+        RequestPacket request = new RequestPacket(t, p);
         byte[] requestBytes = UDPUtils.serialize(request);
         if(requestBytes == null) {
             System.err.println("[UDPUnderlay] Invalid request.");

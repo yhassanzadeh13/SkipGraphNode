@@ -1,8 +1,8 @@
 package underlay.udp;
 
 import underlay.RequestHandler;
+import underlay.packets.RequestPacket;
 import underlay.packets.ResponseParameters;
-import underlay.tcp.TCPRequest;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -17,7 +17,7 @@ public class UDPHandler implements Runnable {
     // The UDP socket that the response will be sent through.
     private final DatagramSocket udpSocket;
     // The received request to handle.
-    private final TCPRequest request;
+    private final RequestPacket request;
     // The address of the client that the request was sent from.
     private final InetAddress clientAddress;
     // The port of the client that the request was sent from.
@@ -25,7 +25,7 @@ public class UDPHandler implements Runnable {
     // The handler which will be handling this request.
     private final RequestHandler requestHandler;
 
-    public UDPHandler(DatagramSocket udpSocket, TCPRequest request, InetAddress clientAddress, int clientPort,
+    public UDPHandler(DatagramSocket udpSocket, RequestPacket request, InetAddress clientAddress, int clientPort,
                       RequestHandler requestHandler) {
         this.udpSocket = udpSocket;
         this.request = request;
