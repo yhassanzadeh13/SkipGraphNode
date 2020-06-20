@@ -13,8 +13,8 @@ import underlay.packets.RequestType;
  */
 public class UnderlayTest {
 
-    private static final int LOCAL_PORT = 9093;
-    private static final int REMOTE_PORT = 9094;
+    protected static final int LOCAL_PORT = 9090;
+    protected static final int REMOTE_PORT = 9091;
 
     protected static Underlay localUnderlay;
     protected static Underlay remoteUnderlay;
