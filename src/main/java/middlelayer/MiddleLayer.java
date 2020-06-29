@@ -41,15 +41,22 @@ public class MiddleLayer {
      * @return response emitted by the overlay.
      */
     public ResponseParameters receive(RequestType t, RequestParameters p) {
-        return switch (t) {
-            case SearchByNameID -> overlay.searchByNameID((String) p.getRequestValue("targetNameID"));
-            case SearchByNumID -> overlay.searchByNumID((Integer) p.getRequestValue("targetNumID"));
-            case NameIDLevelSearch -> overlay.nameIDLevelSearch((Integer) p.getRequestValue("level"),
-                    (String) p.getRequestValue("targetNameID"));
-            case UpdateLeftNode -> overlay.updateLeftNode((Integer) p.getRequestValue("level"),
-                    (String) p.getRequestValue("newValue"));
-            case UpdateRightNode -> overlay.updateRightNode((Integer) p.getRequestValue("level"),
-                    (String) p.getRequestValue("newValue"));
-        };
+        switch (t) {
+            case SearchByNameID:
+                return overlay.searchByNameID((String) p.getRequestValue("targetNameID"));
+            case SearchByNumID:
+                return overlay.searchByNumID((Integer) p.getRequestValue("targetNumID"));
+            case NameIDLevelSearch:
+                return overlay.nameIDLevelSearch((Integer) p.getRequestValue("level"),
+                        (String) p.getRequestValue("targetNameID"));
+            case UpdateLeftNode:
+                return overlay.updateLeftNode((Integer) p.getRequestValue("level"),
+                        (String) p.getRequestValue("newValue"));
+            case UpdateRightNode:
+                return overlay.updateRightNode((Integer) p.getRequestValue("level"),
+                        (String) p.getRequestValue("newValue"));
+            default:
+                return null;
+        }
     }
 }
