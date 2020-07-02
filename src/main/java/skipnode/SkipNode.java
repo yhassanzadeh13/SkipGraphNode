@@ -1,6 +1,7 @@
 package skipnode;
 
 import lookup.LookupTable;
+import middlelayer.MiddleLayer;
 import underlay.Underlay;
 
 public class SkipNode implements SkipNodeInterface{
@@ -12,6 +13,9 @@ public class SkipNode implements SkipNodeInterface{
     private String nameID;
     private LookupTable lookupTable;
 
+    private MiddleLayer middleLayer;
+
+
     public SkipNode(SkipNodeIdentity snID, LookupTable lookupTable){
         this.address = snID.getAddress();
         this.numID = snID.getNumID();
@@ -19,6 +23,11 @@ public class SkipNode implements SkipNodeInterface{
         this.lookupTable = lookupTable;
     }
 
+
+    @Override
+    public void setMiddleLayer(MiddleLayer middleLayer) {
+        this.middleLayer=middleLayer;
+    }
 
     @Override
     public boolean insert(SkipNodeInterface sn, String introducerAddress) {
@@ -45,12 +54,18 @@ public class SkipNode implements SkipNodeInterface{
     }
 
     @Override
-    public SkipNodeIdentity UpdateLeftNode(SkipNodeIdentity snId, int level) {
+    public SkipNodeIdentity nameIDLevelSearch(int level, String nameID) {
+        //TODO Implement
+        return LookupTable.EMPTY_NODE;
+    }
+
+    @Override
+    public SkipNodeIdentity updateLeftNode(SkipNodeIdentity snId, int level) {
         return lookupTable.UpdateLeft(snId, level);
     }
 
     @Override
-    public SkipNodeIdentity UpdateRightNode(SkipNodeIdentity snId, int level) {
+    public SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level) {
         return lookupTable.UpdateRight(snId, level);
     }
 }
