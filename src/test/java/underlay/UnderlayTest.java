@@ -11,6 +11,7 @@ import skipnode.SkipNode;
 import skipnode.SkipNodeInterface;
 import underlay.packets.GenericRequest;
 import underlay.packets.RequestType;
+import underlay.packets.UpdateRequest;
 
 /**
  * This test creates two underlays on the machine at different ports and checks the
@@ -70,11 +71,9 @@ public class UnderlayTest {
         r.addParameter("targetNameID", "");
         Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.NameIDLevelSearch, r));
         // Check left/right update requests.
-        r = new GenericRequest();
-        r.addParameter("level", 0);
-        r.addParameter("newValue", LookupTable.EMPTY_NODE);
-        Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateLeftNode, r));
-        Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateRightNode, r));
+        UpdateRequest u = new UpdateRequest(0, LookupTable.EMPTY_NODE);
+        Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateLeftNode, u));
+        Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateRightNode, u));
     }
 
     // Terminates the underlays.
