@@ -113,10 +113,7 @@ public class MiddleLayer {
 
     public SkipNodeIdentity updateRightNode(String destinationAddress, int port,SkipNodeIdentity snId, int level){
         // Create the request
-        GenericRequest req = new GenericRequest();
-        // Add the parameters
-        req.addParameter("level", level);
-        req.addParameter("newValue", snId);
+        UpdateRequest req = new UpdateRequest(level, snId);
 
         // Send the request through the underlay
         ResponseParameters response = this.send(destinationAddress, port, RequestType.UpdateRightNode, req);
@@ -126,10 +123,7 @@ public class MiddleLayer {
 
     public SkipNodeIdentity updateLeftNode(String destinationAddress, int port,SkipNodeIdentity snId, int level){
         // Create the request
-        GenericRequest req = new GenericRequest();
-        // Add the parameters
-        req.addParameter("level", level);
-        req.addParameter("newValue", snId);
+        UpdateRequest req = new UpdateRequest(level, snId);
 
         // Send the request through the underlay
         ResponseParameters response = this.send(destinationAddress, port, RequestType.UpdateLeftNode, req);

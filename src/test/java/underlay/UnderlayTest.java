@@ -1,11 +1,14 @@
 package underlay;
 
+import lookup.LookupTable;
+import lookup.LookupTableFactory;
 import middlelayer.MiddleLayer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import overlay.Overlay;
+import skipnode.SkipNode;
+import skipnode.SkipNodeInterface;
 import underlay.packets.GenericRequest;
 import underlay.packets.RequestType;
 
@@ -27,7 +30,7 @@ public class UnderlayTest {
      * @param underlay underlay to be built.
      */
     protected static void buildLayers(Underlay underlay) {
-        Overlay overlay = new Overlay();
+        SkipNodeInterface overlay = new SkipNode(LookupTable.EMPTY_NODE, LookupTableFactory.createDefaultLookupTable());
         MiddleLayer middleLayer = new MiddleLayer(underlay, overlay);
         underlay.setMiddleLayer(middleLayer);
         overlay.setMiddleLayer(middleLayer);
@@ -69,7 +72,7 @@ public class UnderlayTest {
         // Check left/right update requests.
         r = new GenericRequest();
         r.addParameter("level", 0);
-        r.addParameter("newValue", "");
+        r.addParameter("newValue", LookupTable.EMPTY_NODE);
         Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateLeftNode, r));
         Assertions.assertNotNull(localUnderlay.sendMessage(remoteAddress, remotePort, RequestType.UpdateRightNode, r));
     }

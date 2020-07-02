@@ -4,6 +4,7 @@ import skipnode.SkipNodeIdentity;
 
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * ConcurrentLookupTable is a lookup table that supports concurrent calls
@@ -26,9 +27,10 @@ public class ConcurrentLookupTable implements LookupTable {
 
     public ConcurrentLookupTable(int numLevels){
         this.numLevels=numLevels;
+        lock = new ReentrantReadWriteLock(true);
         nodes = new ArrayList<>(2*numLevels);
         for(int i=0;i<2*numLevels;i++){
-            nodes.set(i, LookupTable.EMPTY_NODE);
+            nodes.add(i, LookupTable.EMPTY_NODE);
         }
     }
 
