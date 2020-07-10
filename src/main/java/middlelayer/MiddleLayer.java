@@ -30,8 +30,10 @@ public class MiddleLayer {
      * @return the response emitted by the remote client.
      */
     protected Response send(String destinationAddress, int port, Request request) {
-        // TODO: check if the dest. address is identical to the address of this node
-        //  and relay the request to a different local node.
+        // Bounce the request up.
+        if(destinationAddress.equals(underlay.getAddress()) && port == underlay.getPort()) {
+            return receive(request);
+        }
         return underlay.sendMessage(destinationAddress, port, request);
     }
 
@@ -97,9 +99,19 @@ public class MiddleLayer {
 
     }
 
-    public SkipNodeIdentity updateLeftNode(String destinationAddress, int port,SkipNodeIdentity snId, int level) {
+    public SkipNodeIdentity updateLeftNode(String destinationAddress, int port, SkipNodeIdentity snId, int level) {
         // Send the request through the underlay
         Response response = this.send(destinationAddress, port, new UpdateLeftNodeRequest(level, snId));
         return ((SkipNodeIdentityResponse) response).identity;
+    }
+
+    public SkipNodeIdentity getLeftNode(String destinationAddress, int port, int level) {
+        Response r = send(destinationAddress, port, new GetLeftNodeRequest(level));
+        return ((SkipNodeIdentityResponse) r).identity;
+    }
+
+    public SkipNodeIdentity getRightNode(String destinationAddress, int port, int level) {
+        Response r = send(destinationAddress, port, new GetRightNodeRequest(level));
+        return ((SkipNodeIdentityResponse) r).identity;
     }
 }
