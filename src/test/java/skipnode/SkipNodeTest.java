@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Contains the skip-node tests.
  */
-class SkipNodeTest extends UnderlayTest {
+class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
     static int NODES = 16;

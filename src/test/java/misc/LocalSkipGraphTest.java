@@ -9,7 +9,7 @@ import underlay.UnderlayTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LocalSkipGraphTest extends UnderlayTest {
+class LocalSkipGraphTest {
 
     @Test
     void fourNodes() {
