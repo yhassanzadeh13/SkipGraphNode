@@ -24,6 +24,22 @@ public class SkipNode implements SkipNodeInterface {
         this.lookupTable = lookupTable;
     }
 
+    public int getNumID() {
+        return numID;
+    }
+
+    public String getNameID() {
+        return nameID;
+    }
+
+    public LookupTable getLookupTable() {
+        return lookupTable;
+    }
+
+    public SkipNodeIdentity getIdentity() {
+        return new SkipNodeIdentity(nameID, numID, address, port);
+    }
+
     @Override
     public void setMiddleLayer(MiddleLayer middleLayer) {
         this.middleLayer=middleLayer;
@@ -47,36 +63,53 @@ public class SkipNode implements SkipNodeInterface {
         return LookupTable.EMPTY_NODE;
     }
 
+    /**
+     * Performs a name ID lookup over the skip-graph. If the exact name ID is not found, the most similar one is
+     * returned.
+     * @param targetNameID the target name ID.
+     * @return the node with the name ID most similar to the target name ID.
+     */
     @Override
     public SkipNodeIdentity searchByNameID(String targetNameID) {
-        if(nameID.equals(targetNameID)) return new SkipNodeIdentity(nameID, numID, address, port);
+        if(nameID.equals(targetNameID)) return getIdentity();
 
+        // Find the level in which the search should be started from.
         int level = SkipNodeIdentity.commonBits(nameID, targetNameID);
-        SkipNodeIdentity leftLadder = lookupTable.GetLeft(level);
-        SkipNodeIdentity rightLadder = lookupTable.GetRight(level);
-        SkipNodeIdentity chosenLadder = LookupTable.EMPTY_NODE;
+        if(level < 0) return getIdentity();
 
-        while(!leftLadder.equals(LookupTable.EMPTY_NODE) || !rightLadder.equals(LookupTable.EMPTY_NODE)) {
-            int leftLadderHeight = (leftLadder.equals(LookupTable.EMPTY_NODE)) ? -1 : SkipNodeIdentity.commonBits(leftLadder.getNameID(), targetNameID);
+        // We define the concept of a ladder. A ladder is a node that can be used to climb "up" in the skip graph.
+        // During a name ID search, we can climb up when the common prefix length is higher than the node that
+        // this method is called from.
+        SkipNodeIdentity potentialLeftLadder = lookupTable.GetLeft(level);
+        SkipNodeIdentity potentialRightLadder = lookupTable.GetRight(level);
+        SkipNodeIdentity ladder = LookupTable.EMPTY_NODE;
+
+        // We start by checking the nodes that are closest to this node from both right and left. We stop checking
+        // once we find a ladder.
+        while(!potentialLeftLadder.equals(LookupTable.EMPTY_NODE) || !potentialRightLadder.equals(LookupTable.EMPTY_NODE)) {
+            // Check if the potential left ladder is indeed a ladder. If it is not, then try its left neighbor at the next iteration.
+            int leftLadderHeight = (potentialLeftLadder.equals(LookupTable.EMPTY_NODE)) ? -1 : SkipNodeIdentity.commonBits(potentialLeftLadder.getNameID(), targetNameID);
             if(leftLadderHeight > level) {
-                chosenLadder = leftLadder;
+                ladder = potentialLeftLadder;
                 break;
-            } else if(!leftLadder.equals(LookupTable.EMPTY_NODE)) {
-                leftLadder = middleLayer.getLeftNode(leftLadder.getAddress(), leftLadder.getPort(), level);
+            } else if(!potentialLeftLadder.equals(LookupTable.EMPTY_NODE)) {
+                potentialLeftLadder = middleLayer.getLeftNode(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(), level);
             }
-            int rightLadderHeight = (rightLadder.equals(LookupTable.EMPTY_NODE)) ? -1 : SkipNodeIdentity.commonBits(rightLadder.getNameID(), targetNameID);
+            // Check if the potential right ladder is indeed a ladder. If it is not, then try its right neighbor at the next iteration.
+            int rightLadderHeight = (potentialRightLadder.equals(LookupTable.EMPTY_NODE)) ? -1 : SkipNodeIdentity.commonBits(potentialRightLadder.getNameID(), targetNameID);
             if(rightLadderHeight > level) {
-                chosenLadder = rightLadder;
+                ladder = potentialRightLadder;
                 break;
-            } else if(!rightLadder.equals(LookupTable.EMPTY_NODE)) {
-                rightLadder = middleLayer.getRightNode(rightLadder.getAddress(), rightLadder.getPort(), level);
+            } else if(!potentialRightLadder.equals(LookupTable.EMPTY_NODE)) {
+                potentialRightLadder = middleLayer.getRightNode(potentialRightLadder.getAddress(), potentialRightLadder.getPort(), level);
             }
         }
-
-        if(chosenLadder.equals(LookupTable.EMPTY_NODE)) {
-            return new SkipNodeIdentity(nameID, numID, address, port);
+        // If no ladders were found, this node is as close as we can get.
+        if(ladder.equals(LookupTable.EMPTY_NODE)) {
+            return getIdentity();
         }
-        return middleLayer.searchByNameID(chosenLadder.getAddress(), chosenLadder.getPort(), targetNameID);
+        // If a ladder was found, delegate the search to that node.
+        return middleLayer.searchByNameID(ladder.getAddress(), ladder.getPort(), targetNameID);
     }
 
     @Override
@@ -94,4 +127,15 @@ public class SkipNode implements SkipNodeInterface {
     public SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level) {
         return lookupTable.UpdateRight(snId, level);
     }
+
+    @Override
+    public SkipNodeIdentity getRightNode(int level) {
+        return lookupTable.GetRight(level);
+    }
+
+    @Override
+    public SkipNodeIdentity getLeftNode(int level) {
+        return lookupTable.GetLeft(level);
+    }
+
 }

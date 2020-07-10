@@ -61,6 +61,12 @@ public class MiddleLayer {
             case UpdateRightNode:
                 identity = overlay.updateRightNode(((UpdateRightNodeRequest) request).snId, ((UpdateRightNodeRequest) request).level);
                 return new SkipNodeIdentityResponse(identity);
+            case GetRightNode:
+                identity = overlay.getRightNode(((GetRightNodeRequest) request).level);
+                return new SkipNodeIdentityResponse(identity);
+            case GetLeftNode:
+                identity = overlay.getLeftNode(((GetLeftNodeRequest) request).level);
+                return new SkipNodeIdentityResponse(identity);
             default:
                 return null;
         }

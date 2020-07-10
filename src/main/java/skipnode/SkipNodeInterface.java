@@ -61,4 +61,18 @@ public interface SkipNodeInterface {
      * @return The SkipNodeIdentity that was replaced (Could be an EMPTY_NODE)
      */
     SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level);
+
+    /**
+     * Returns the right neighbor of the node at the given level.
+     * @param level the level of the right neighbor.
+     * @return the right neighbor at the given level.
+     */
+    SkipNodeIdentity getRightNode(int level);
+
+    /**
+     * Returns the left neighbor of the node at the given level.
+     * @param level the level of the left neighbor.
+     * @return the left neighbor at the given level.
+     */
+    SkipNodeIdentity getLeftNode(int level);
 }
