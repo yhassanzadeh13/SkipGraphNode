@@ -117,12 +117,7 @@ public class MiddleLayer {
     }
 
     public SkipNodeIdentity getRightNode(String destinationAddress, int port, int level) {
-        Response r = send(destinationAddress, port, new GetRightNodeRequest(level));
-        return ((SkipNodeIdentityResponse) r).identity;
-      
-    public SkipNodeIdentity updateLeftNode(String destinationAddress, int port,SkipNodeIdentity snId, int level) {
-        // Send the request through the underlay
-        Response response = this.send(destinationAddress, port, new UpdateLeftNodeRequest(level, snId));
-        return ((SkipNodeIdentityResponse) response).identity;
+      Response r = send(destinationAddress, port, new GetRightNodeRequest(level));
+      return ((SkipNodeIdentityResponse) r).identity;
     }
 }
