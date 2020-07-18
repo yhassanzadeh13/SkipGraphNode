@@ -24,6 +24,21 @@ public class SkipNode implements SkipNodeInterface {
         this.lookupTable = lookupTable;
     }
 
+    public int getNumID(){
+        return numID;
+    }
+
+    public String getNameID(){
+        return nameID;
+    }
+
+    public LookupTable getLookupTable(){
+        return lookupTable;
+    }
+
+    public SkipNodeIdentity getIdentity(){
+        return new SkipNodeIdentity(nameID, numID, address, port);
+    }
 
     @Override
     public void setMiddleLayer(MiddleLayer middleLayer) {
@@ -60,6 +75,8 @@ public class SkipNode implements SkipNodeInterface {
                 if (lookupTable.GetRight(level)==LookupTable.EMPTY_NODE ||
                         lookupTable.GetRight(level).getNumID() > numID){
                     level--;
+                }else{
+                    break;
                 }
             }
 
@@ -76,8 +93,10 @@ public class SkipNode implements SkipNodeInterface {
             // keep going down
             while(level>=0){
                 if (lookupTable.GetLeft(level)==LookupTable.EMPTY_NODE ||
-                        lookupTable.GetLeft(level).getNumID() > numID){
+                        lookupTable.GetLeft(level).getNumID() < numID){
                     level--;
+                }else{
+                    break;
                 }
             }
 
