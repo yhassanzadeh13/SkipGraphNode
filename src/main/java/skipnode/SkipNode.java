@@ -24,6 +24,21 @@ public class SkipNode implements SkipNodeInterface {
         this.lookupTable = lookupTable;
     }
 
+    public int getNumID() {
+        return numID;
+    }
+
+    public String getNameID() {
+        return nameID;
+    }
+
+    public LookupTable getLookupTable() {
+        return lookupTable;
+    }
+
+    public SkipNodeIdentity getIdentity() {
+        return new SkipNodeIdentity(nameID, numID, address, port);
+    }
 
     @Override
     public void setMiddleLayer(MiddleLayer middleLayer) {
