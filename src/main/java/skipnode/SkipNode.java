@@ -24,19 +24,19 @@ public class SkipNode implements SkipNodeInterface {
         this.lookupTable = lookupTable;
     }
 
-    public int getNumID(){
+    public int getNumID() {
         return numID;
     }
 
-    public String getNameID(){
+    public String getNameID() {
         return nameID;
     }
 
-    public LookupTable getLookupTable(){
+    public LookupTable getLookupTable() {
         return lookupTable;
     }
 
-    public SkipNodeIdentity getIdentity(){
+    public SkipNodeIdentity getIdentity() {
         return new SkipNodeIdentity(nameID, numID, address, port);
     }
 
