@@ -95,20 +95,29 @@ public class ConcurrentBackupTable implements BackupTable{
 
     @Override
     public List<SkipNodeIdentity> getRightNeighbors(int level) {
+        lock.readLock().lock();
         int idx = getIndex(direction.RIGHT, level);
         if(idx >= nodes.size()){
             return emptyLevel;
         }
-        return nodes.get(idx);
+        // This works because SkipNodeIdentity is immutable
+        ArrayList<SkipNodeIdentity> result = new ArrayList<>(nodes.get(idx));
+        lock.readLock().unlock();
+        return result;
     }
 
     @Override
     public List<SkipNodeIdentity> getLeftNeighbors(int level) {
+        lock.readLock().lock();
         int idx = getIndex(direction.LEFT, level);
         if(idx >= nodes.size()){
+            lock.readLock().unlock();
             return emptyLevel;
         }
-        return nodes.get(idx);
+        // This works because SkipNodeIdentity is immutable
+        ArrayList<SkipNodeIdentity> result = new ArrayList<>(nodes.get(idx));
+        lock.readLock().unlock();
+        return result;
     }
 
     @Override
