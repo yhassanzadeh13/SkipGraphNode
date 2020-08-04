@@ -35,25 +35,27 @@ public class ConcurrentLookupTable implements LookupTable {
     }
 
     @Override
-    public SkipNodeIdentity UpdateLeft(SkipNodeIdentity node, int level) {
+    public SkipNodeIdentity updateLeft(SkipNodeIdentity node, int level) {
         lock.writeLock().lock();
         int idx = getIndex(direction.LEFT, level);
+        if(idx>=nodes.size()) return LookupTable.EMPTY_NODE;
         SkipNodeIdentity prev = nodes.set(idx,node);
         lock.writeLock().unlock();
         return prev;
     }
 
     @Override
-    public SkipNodeIdentity UpdateRight(SkipNodeIdentity node, int level) {
+    public SkipNodeIdentity updateRight(SkipNodeIdentity node, int level) {
         lock.writeLock().lock();
         int idx = getIndex(direction.RIGHT, level);
+        if(idx>=nodes.size()) return LookupTable.EMPTY_NODE;
         SkipNodeIdentity prev = nodes.set(idx,node);
         lock.writeLock().unlock();
         return prev;
     }
 
     @Override
-    public SkipNodeIdentity GetRight(int level) {
+    public SkipNodeIdentity getRight(int level) {
         lock.readLock().lock();
         int idx = getIndex(direction.RIGHT, level);
         SkipNodeIdentity node = (idx < nodes.size()) ? nodes.get(idx) : LookupTable.EMPTY_NODE;
@@ -62,7 +64,7 @@ public class ConcurrentLookupTable implements LookupTable {
     }
 
     @Override
-    public SkipNodeIdentity GetLeft(int level) {
+    public SkipNodeIdentity getLeft(int level) {
         lock.readLock().lock();
         int idx = getIndex(direction.LEFT, level);
         SkipNodeIdentity node = (idx < nodes.size()) ? nodes.get(idx) : LookupTable.EMPTY_NODE;
@@ -71,21 +73,22 @@ public class ConcurrentLookupTable implements LookupTable {
     }
 
     @Override
-    public SkipNodeIdentity RemoveLeft(int level) {
-        return UpdateLeft(LookupTable.EMPTY_NODE, level);
+    public SkipNodeIdentity removeLeft(int level) {
+        return updateLeft(LookupTable.EMPTY_NODE, level);
     }
 
     @Override
-    public SkipNodeIdentity RemoveRight(int level) {
-        return UpdateRight(LookupTable.EMPTY_NODE, level);
+    public SkipNodeIdentity removeRight(int level) {
+        return updateRight(LookupTable.EMPTY_NODE, level);
     }
 
     @Override
     public int getNumLevels() {
-        return 0;
+        return this.numLevels;
     }
 
     private int getIndex(direction dir, int level){
+        if(level<0) return Integer.MAX_VALUE;
         if(dir==direction.LEFT){
             return level*2;
         }else{

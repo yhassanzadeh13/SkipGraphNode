@@ -5,9 +5,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import skipnode.SkipNode;
 import skipnode.SkipNodeIdentity;
-import underlay.UnderlayTest;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class LocalSkipGraphTest {
 
@@ -39,12 +36,12 @@ class LocalSkipGraphTest {
     void tableConsistencyCheck(int numID, String nameID, LookupTable table) {
         for(int i = 0; i < table.getNumLevels(); i++) {
             for(int j = 0; j < 2; j++) {
-                SkipNodeIdentity neighbor = (j == 0) ? table.GetLeft(i) : table.GetRight(i);
+                SkipNodeIdentity neighbor = (j == 0) ? table.getLeft(i) : table.getRight(i);
                 if(neighbor.equals(LookupTable.EMPTY_NODE)) continue;
                 Assertions.assertTrue(SkipNodeIdentity.commonBits(neighbor.getNameID(), nameID) >= i);
             }
-            SkipNodeIdentity leftNeighbor = table.GetLeft(i);
-            SkipNodeIdentity rightNeighbor = table.GetRight(i);
+            SkipNodeIdentity leftNeighbor = table.getLeft(i);
+            SkipNodeIdentity rightNeighbor = table.getRight(i);
             if(!leftNeighbor.equals(LookupTable.EMPTY_NODE)) Assertions.assertTrue(leftNeighbor.getNumID() < numID);
             if(!rightNeighbor.equals(LookupTable.EMPTY_NODE)) Assertions.assertTrue(rightNeighbor.getNumID() > numID);
         }

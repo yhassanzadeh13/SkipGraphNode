@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 // Basic skipnode.SkipNodeIdentity class
-public class SkipNodeIdentity implements Serializable {
+public class SkipNodeIdentity implements Serializable, Comparable<SkipNodeIdentity> {
     private final String nameID;
     private final int numID;
     private final String address;
@@ -61,5 +61,18 @@ public class SkipNodeIdentity implements Serializable {
     @Override
     public String toString() {
         return "Name ID: "+nameID+"\tNum ID: "+numID+"\tAddress: "+address+"\tPort: "+port;
+    }
+
+
+
+    @Override
+    public int compareTo(SkipNodeIdentity o) {
+        if (numID>o.numID){
+            return 1;
+        }else if(numID<o.numID){
+            return -1;
+        }else{
+            return 0;
+        }
     }
 }

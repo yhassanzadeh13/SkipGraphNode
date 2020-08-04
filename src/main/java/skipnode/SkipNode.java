@@ -2,7 +2,6 @@ package skipnode;
 
 import lookup.LookupTable;
 import middlelayer.MiddleLayer;
-import underlay.Underlay;
 
 public class SkipNode implements SkipNodeInterface {
     /**
@@ -72,8 +71,8 @@ public class SkipNode implements SkipNodeInterface {
             // Start from the top, while there is no right neighbor, or the right neighbor's num ID is greater than what we are searching for
             // keep going down
             while(level>=0){
-                if (lookupTable.GetRight(level)==LookupTable.EMPTY_NODE ||
-                        lookupTable.GetRight(level).getNumID() > numID){
+                if (lookupTable.getRight(level)==LookupTable.EMPTY_NODE ||
+                        lookupTable.getRight(level).getNumID() > numID){
                     level--;
                 }else{
                     break;
@@ -86,14 +85,14 @@ public class SkipNode implements SkipNodeInterface {
             }
 
             // Else, delegate the search to that node on the right
-            SkipNodeIdentity delegateNode = lookupTable.GetRight(level);
+            SkipNodeIdentity delegateNode = lookupTable.getRight(level);
             return middleLayer.searchByNumID(delegateNode.getAddress(), delegateNode.getPort(), numID);
         }else{
             // Start from the top, while there is no right neighbor, or the right neighbor's num ID is greater than what we are searching for
             // keep going down
             while(level>=0){
-                if (lookupTable.GetLeft(level)==LookupTable.EMPTY_NODE ||
-                        lookupTable.GetLeft(level).getNumID() < numID){
+                if (lookupTable.getLeft(level)==LookupTable.EMPTY_NODE ||
+                        lookupTable.getLeft(level).getNumID() < numID){
                     level--;
                 }else{
                     break;
@@ -106,7 +105,7 @@ public class SkipNode implements SkipNodeInterface {
             }
 
             // Else, delegate the search to that node on the right
-            SkipNodeIdentity delegateNode = lookupTable.GetLeft(level);
+            SkipNodeIdentity delegateNode = lookupTable.getLeft(level);
             return middleLayer.searchByNumID(delegateNode.getAddress(), delegateNode.getPort(), numID);
         }
     }
@@ -189,22 +188,22 @@ public class SkipNode implements SkipNodeInterface {
 
     @Override
     public SkipNodeIdentity updateLeftNode(SkipNodeIdentity snId, int level) {
-        return lookupTable.UpdateLeft(snId, level);
+        return lookupTable.updateLeft(snId, level);
     }
 
     @Override
     public SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level) {
-        return lookupTable.UpdateRight(snId, level);
+        return lookupTable.updateRight(snId, level);
     }
 
     @Override
     public SkipNodeIdentity getRightNode(int level) {
-        return lookupTable.GetRight(level);
+        return lookupTable.getRight(level);
     }
 
     @Override
     public SkipNodeIdentity getLeftNode(int level) {
-        return lookupTable.GetLeft(level);
+        return lookupTable.getLeft(level);
     }
 
 }

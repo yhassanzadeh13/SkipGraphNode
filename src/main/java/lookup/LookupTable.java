@@ -11,7 +11,7 @@ public interface LookupTable {
      * @param level The level on which to insert the node
      * @return Replaced node
      */
-    SkipNodeIdentity UpdateLeft(SkipNodeIdentity node, int level);
+    SkipNodeIdentity updateLeft(SkipNodeIdentity node, int level);
 
     /**
      * Updates the right neighbor on the given level to be the node
@@ -19,35 +19,35 @@ public interface LookupTable {
      * @param level The level on which to insert the node
      * @return Replaced node
      */
-    SkipNodeIdentity UpdateRight(SkipNodeIdentity node, int level);
+    SkipNodeIdentity updateRight(SkipNodeIdentity node, int level);
 
     /**
      * Returns the right neighbor on the given level
      * @param level The level to get the node from
      * @return The right neighbor on the given level
      */
-    SkipNodeIdentity GetRight(int level);
+    SkipNodeIdentity getRight(int level);
 
     /**
      * Returns the left neighbor on the given level
      * @param level The level to get the node from
      * @return The left neighbor on the given level
      */
-    SkipNodeIdentity GetLeft(int level);
+    SkipNodeIdentity getLeft(int level);
 
     /**
      * Remove the left neighbor on the given level
      * @param level The level from which to remove the left neighbor
      * @return Removed node
      */
-    SkipNodeIdentity RemoveLeft(int level);
+    SkipNodeIdentity removeLeft(int level);
 
     /**
      * Remove the right neighbor on the given level
      * @param level The level from which to remove the right neighbor
      * @return Removed node
      */
-    SkipNodeIdentity RemoveRight(int level);
+    SkipNodeIdentity removeRight(int level);
 
     /**
      * Get the number of levels in the lookup table
