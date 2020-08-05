@@ -63,16 +63,8 @@ public class SkipNodeIdentity implements Serializable, Comparable<SkipNodeIdenti
         return "Name ID: "+nameID+"\tNum ID: "+numID+"\tAddress: "+address+"\tPort: "+port;
     }
 
-
-
     @Override
     public int compareTo(SkipNodeIdentity o) {
-        if (numID>o.numID){
-            return 1;
-        }else if(numID<o.numID){
-            return -1;
-        }else{
-            return 0;
-        }
+        return Integer.compare(numID, o.numID);
     }
 }

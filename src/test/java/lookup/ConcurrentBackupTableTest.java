@@ -16,50 +16,50 @@ public class ConcurrentBackupTableTest {
 
     // Initializes the backup table.
     @BeforeEach
-    static void setUp(){
+    void setUp() {
         backupTable = new ConcurrentBackupTable(30);
         nodesToInsert = new ArrayList<>();
 
-        for (int i = 1; i < 10; i++){
+        for (int i = 1; i < 10; i++) {
             SkipNodeIdentity sn = new SkipNodeIdentity("0000", i, "None", -1);
             nodesToInsert.add(sn);
         }
     }
 
     @Test
-    static void addRightNeighborsInReverseOrderTest(){
-        for(int i=nodesToInsert.size()-1;i>=0;i--){
+    void addRightNeighborsInReverseOrderTest() {
+        for(int i = nodesToInsert.size()-1; i >= 0; i--){
             backupTable.addRightNode(nodesToInsert.get(i), 0);
         }
-        Assertions.assertIterableEquals(nodesToInsert, backupTable.getRightNeighbors(0));
+        Assertions.assertIterableEquals(nodesToInsert, backupTable.getRights(0));
         Assertions.assertEquals(nodesToInsert.size(), nodesToInsert.size());
     }
 
     @Test
-    static void addRightNeighborsInOrderTest(){
-        for(int i=0 ; i<nodesToInsert.size();i++){
+    void addRightNeighborsInOrderTest(){
+        for(int i = 0; i < nodesToInsert.size(); i++){
             backupTable.addRightNode(nodesToInsert.get(i), 0);
         }
-        Assertions.assertIterableEquals(nodesToInsert, backupTable.getRightNeighbors(0));
+        Assertions.assertIterableEquals(nodesToInsert, backupTable.getRights(0));
     }
 
 
     @Test
-    static void addLeftNeighborsInReverseOrderTest(){
+    void addLeftNeighborsInReverseOrderTest(){
         Collections.reverse(nodesToInsert);
-        for(int i=0 ; i<nodesToInsert.size();i++){
+        for(int i = 0 ; i < nodesToInsert.size(); i++){
             backupTable.addLeftNode(nodesToInsert.get(i), 0);
         }
-        Assertions.assertIterableEquals(nodesToInsert, backupTable.getLeftNeighbors(0));
+        Assertions.assertIterableEquals(nodesToInsert, backupTable.getLefts(0));
     }
 
     @Test
-    static void addLeftNeighborsInOrderTest(){
-        for(int i=0 ; i<nodesToInsert.size();i++){
+    void addLeftNeighborsInOrderTest(){
+        for(int i = 0 ; i < nodesToInsert.size(); i++){
             backupTable.addLeftNode(nodesToInsert.get(i), 0);
         }
         Collections.reverse(nodesToInsert);
-        Assertions.assertIterableEquals(nodesToInsert, backupTable.getLeftNeighbors(0));
+        Assertions.assertIterableEquals(nodesToInsert, backupTable.getLefts(0));
     }
 
 }
