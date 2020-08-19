@@ -3,6 +3,7 @@ package skipnode;
 import lookup.LookupTable;
 import middlelayer.MiddleLayer;
 import misc.LocalSkipGraph;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import underlay.Underlay;
@@ -48,6 +49,7 @@ class SkipNodeTest {
             tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
             tableConsistencyCheck(tableMap, n);
         }
+        underlays.forEach(Underlay::terminate);
     }
 
     @Test
@@ -79,6 +81,7 @@ class SkipNodeTest {
                 Assertions.assertEquals(target.getIdentity(), result);
             }
         }
+        underlays.forEach(Underlay::terminate);
     }
 
     @Test
@@ -109,6 +112,7 @@ class SkipNodeTest {
                 Assertions.assertEquals(target.getIdentity(), result);
             }
         }
+        underlays.forEach(Underlay::terminate);
     }
 
     // Checks the correctness of a lookup table owned by the node with the given identity parameters.
