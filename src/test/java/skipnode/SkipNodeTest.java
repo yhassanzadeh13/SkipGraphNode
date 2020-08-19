@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 class SkipNodeTest {
 
-    static int STARTING_PORT = 8080;
+    static int STARTING_PORT = 5050;
     static int NODES = 16;
 
     @Test
