@@ -5,10 +5,11 @@ import lookup.LookupTable;
 import lookup.TentativeTable;
 import middlelayer.MiddleLayer;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public class SkipNode implements SkipNodeInterface {
     /**
@@ -145,8 +146,14 @@ public class SkipNode implements SkipNodeInterface {
         insertionLock.unlock();
     }
 
-    public boolean isInserted() {
-        return inserted;
+    /**
+     * Returns whether the node is available to be used as a router. If the node is still being inserted,
+     * then, this will return false.
+     * @return whether the node is available for routing or not.
+     */
+    @Override
+    public boolean isAvailable() {
+        return inserted && !insertionLock.isLocked();
     }
 
     /**
@@ -328,11 +335,11 @@ public class SkipNode implements SkipNodeInterface {
             // Expand the search window on the level.
             if(!potentialLeftLadder.equals(LookupTable.EMPTY_NODE)) {
                 buffer = potentialLeftLadder;
-                potentialLeftLadder = middleLayer.getLeftNode(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(), level);
+                potentialLeftLadder = middleLayer.getLeftLadder(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(), level, targetNameID);
             }
             if(!potentialRightLadder.equals(LookupTable.EMPTY_NODE)) {
                 buffer = potentialRightLadder;
-                potentialRightLadder = middleLayer.getRightNode(potentialRightLadder.getAddress(), potentialRightLadder.getPort(), level);
+                potentialRightLadder = middleLayer.getRightLadder(potentialRightLadder.getAddress(), potentialRightLadder.getPort(), level, targetNameID);
             }
             // Try to climb up on the either ladder.
             if(SkipNodeIdentity.commonBits(targetNameID, potentialRightLadder.getNameID()) > level) {
@@ -371,6 +378,60 @@ public class SkipNode implements SkipNodeInterface {
     @Override
     public SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level) {
         return lookupTable.updateRight(snId, level);
+    }
+
+    @Override
+    public SkipNodeIdentity getLeftLadder(int level, String target) {
+        // First, check if the target exists in my lookup table.
+        SkipNodeIdentity r = lookupTable.getLefts(level).stream()
+                .filter(x -> x.getNameID().equals(target))
+                .findFirst()
+                .orElse(null);
+        if(r != null) return r;
+        // Get the potential ladders at the level, sorted by their "height".
+        List<SkipNodeIdentity> potentialLadders = lookupTable.getLefts(level).stream()
+                .filter(x -> SkipNodeIdentity.commonBits(x.getNameID(), target) <= level)
+                .sorted(Comparator.comparingInt(x -> SkipNodeIdentity.commonBits(x.getNameID(), getNameID())))
+                .collect(Collectors.toList());
+        // If no potential ladder exists, we want to return the first available node. Thus, we set the potential ladders
+        // to every node on the left.
+        if(potentialLadders.isEmpty()) {
+            potentialLadders = lookupTable.getLefts(level);
+        }
+        // Now, go through every potential ladder and return the first one that is available.
+        for(SkipNodeIdentity potentialLadder : potentialLadders) {
+            boolean available = middleLayer.isAvailable(potentialLadder.getAddress(), potentialLadder.getPort());
+            if(available) return potentialLadder;
+        }
+        // If no ladder is available, return an empty node.
+        return LookupTable.EMPTY_NODE;
+    }
+
+    @Override
+    public SkipNodeIdentity getRightLadder(int level, String target) {
+        // First, check if the target exists in my lookup table.
+        SkipNodeIdentity r = lookupTable.getRights(level).stream()
+                .filter(x -> x.getNameID().equals(target))
+                .findFirst()
+                .orElse(null);
+        if(r != null) return r;
+        // Get the potential ladders at the level, sorted by their "height".
+        List<SkipNodeIdentity> potentialLadders = lookupTable.getRights(level).stream()
+                .filter(x -> SkipNodeIdentity.commonBits(x.getNameID(), target) <= level)
+                .sorted(Comparator.comparingInt(x -> SkipNodeIdentity.commonBits(x.getNameID(), getNameID())))
+                .collect(Collectors.toList());
+        // If no potential ladder exists, we want to return the first available node. Thus, we set the potential ladders
+        // to every node on the right.
+        if(potentialLadders.isEmpty()) {
+            potentialLadders = lookupTable.getRights(level);
+        }
+        // Now, go through every potential ladder and return the first one that is available.
+        for(SkipNodeIdentity potentialLadder : potentialLadders) {
+            boolean available = middleLayer.isAvailable(potentialLadder.getAddress(), potentialLadder.getPort());
+            if(available) return potentialLadder;
+        }
+        // If no ladder is available, return an empty node.
+        return LookupTable.EMPTY_NODE;
     }
 
     @Override

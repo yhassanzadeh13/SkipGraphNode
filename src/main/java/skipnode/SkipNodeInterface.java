@@ -19,10 +19,11 @@ public interface SkipNodeInterface {
     void insert(String introducerAddress, int introducerPort);
 
     /**
-     *
-     * @return
+     * Returns whether the node is available to be used as a router. If the node is still being inserted,
+     * then, this will return false.
+     * @return whether the node is available for routing or not.
      */
-    boolean isInserted();
+    boolean isAvailable();
 
     /**
      * Finds the `ladder`, i.e. the node that should be used to propagate a newly joined node to the upper layer.
@@ -116,4 +117,8 @@ public interface SkipNodeInterface {
      * @return the left neighbor at the given level.
      */
     SkipNodeIdentity getLeftNode(int level);
+
+    SkipNodeIdentity getLeftLadder(int level, String nameID);
+
+    SkipNodeIdentity getRightLadder(int level, String nameID);
 }

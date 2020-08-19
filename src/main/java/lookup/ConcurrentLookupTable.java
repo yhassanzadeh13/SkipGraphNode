@@ -76,13 +76,16 @@ public class ConcurrentLookupTable implements LookupTable {
     @Override
     public List<SkipNodeIdentity> getRights(int level) {
         List<SkipNodeIdentity> ls = new ArrayList<>(1);
-        ls.add(getRight(level));
+        SkipNodeIdentity id = getRight(level);
+        if(!id.equals(LookupTable.EMPTY_NODE)) ls.add(id);
         return ls;
     }
 
     @Override
     public List<SkipNodeIdentity> getLefts(int level) {
         List<SkipNodeIdentity> ls = new ArrayList<>(1);
+        SkipNodeIdentity id = getLeft(level);
+        if(!id.equals(LookupTable.EMPTY_NODE)) ls.add(id);
         ls.add(getLeft(level));
         return ls;
     }

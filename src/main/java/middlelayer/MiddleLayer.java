@@ -6,6 +6,7 @@ import underlay.Underlay;
 import underlay.packets.*;
 import underlay.packets.requests.*;
 import underlay.packets.responses.AckResponse;
+import underlay.packets.responses.BooleanResponse;
 import underlay.packets.responses.TableResponse;
 import underlay.packets.responses.IdentityResponse;
 
@@ -89,6 +90,14 @@ public class MiddleLayer {
             case AnnounceNeighbor:
                 overlay.announceNeighbor(((AnnounceNeighborRequest) request).newNeighbor);
                 return new AckResponse();
+            case IsAvailable:
+                return new BooleanResponse(overlay.isAvailable());
+            case GetLeftLadder:
+                identity = overlay.getLeftLadder(((GetLeftLadderRequest)request).level, ((GetLeftLadderRequest)request).nameID);
+                return new IdentityResponse(identity);
+            case GetRightLadder:
+                identity = overlay.getRightLadder(((GetRightLadderRequest)request).level, ((GetRightLadderRequest)request).nameID);
+                return new IdentityResponse(identity);
             default:
                 return null;
         }
@@ -160,8 +169,22 @@ public class MiddleLayer {
         return ((IdentityResponse) r).identity;
     }
 
-    public AckResponse announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor) {
-        Response r = send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor));
-        return (AckResponse) r;
+    public void announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor) {
+        send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor));
+    }
+
+    public boolean isAvailable(String destinationAddress, int port) {
+        Response r = send(destinationAddress, port, new IsAvailableRequest());
+        return ((BooleanResponse) r).answer;
+    }
+
+    public SkipNodeIdentity getLeftLadder(String destinationAddress, int port, int level, String nameID) {
+        Response r = send(destinationAddress, port, new GetLeftLadderRequest(level, nameID));
+        return ((IdentityResponse) r).identity;
+    }
+
+    public SkipNodeIdentity getRightLadder(String destinationAddress, int port, int level, String nameID) {
+        Response r = send(destinationAddress, port, new GetRightLadderRequest(level, nameID));
+        return ((IdentityResponse) r).identity;
     }
 }
