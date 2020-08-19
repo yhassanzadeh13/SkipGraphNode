@@ -121,6 +121,15 @@ public class ConcurrentLookupTable implements LookupTable {
         return this.numLevels;
     }
 
+    /**
+     * Returns the new neighbors (unsorted) of a newly inserted node. It is assumed that the newly inserted node
+     * will be a neighbor to the owner of this lookup table.
+     * @param owner the identity of the owner of the lookup table.
+     * @param newNameID the name ID of the newly inserted node.
+     * @param newNumID the num ID of the newly inserted node.
+     * @param level the level of the new neighbor.
+     * @return the list of neighbors (both right and left) of the newly inserted node.
+     */
     @Override
     public TentativeTable acquireNeighbors(SkipNodeIdentity owner, int newNumID, String newNameID, int level) {
         lock.readLock().lock();

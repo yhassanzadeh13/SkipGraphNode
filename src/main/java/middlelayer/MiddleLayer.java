@@ -150,26 +150,31 @@ public class MiddleLayer {
     }
 
     public SkipNodeIdentity getLeftNode(String destinationAddress, int port, int level) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new GetLeftNodeRequest(level));
         return ((IdentityResponse) r).identity;
     }
 
     public SkipNodeIdentity getRightNode(String destinationAddress, int port, int level) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new GetRightNodeRequest(level));
         return ((IdentityResponse) r).identity;
     }
 
     public TentativeTable acquireNeighbors(String destinationAddress, int port, SkipNodeIdentity newNodeID, int level) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new AcquireNeighborsRequest(newNodeID, level));
         return ((TableResponse) r).table;
     }
 
     public SkipNodeIdentity findLadder(String destinationAddress, int port, int level, int direction, String target) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new FindLadderRequest(level, direction, target));
         return ((IdentityResponse) r).identity;
     }
 
     public void announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor) {
+        // Send the request through the underlay
         send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor));
     }
 
@@ -179,11 +184,13 @@ public class MiddleLayer {
     }
 
     public SkipNodeIdentity getLeftLadder(String destinationAddress, int port, int level, String nameID) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new GetLeftLadderRequest(level, nameID));
         return ((IdentityResponse) r).identity;
     }
 
     public SkipNodeIdentity getRightLadder(String destinationAddress, int port, int level, String nameID) {
+        // Send the request through the underlay
         Response r = send(destinationAddress, port, new GetRightLadderRequest(level, nameID));
         return ((IdentityResponse) r).identity;
     }

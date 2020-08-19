@@ -118,7 +118,23 @@ public interface SkipNodeInterface {
      */
     SkipNodeIdentity getLeftNode(int level);
 
-    SkipNodeIdentity getLeftLadder(int level, String nameID);
+    /**
+     * Returns the left ladder at the given level. Used by the search by name ID protocol. We determine
+     * the eligibility of a node as a ladder by checking its availability and comparing its name ID with
+     * the target name ID.
+     * @param level the level.
+     * @param target the target name ID of the search.
+     * @return the best ladder on the left.
+     */
+    SkipNodeIdentity getLeftLadder(int level, String target);
 
-    SkipNodeIdentity getRightLadder(int level, String nameID);
+    /**
+     * Returns the right ladder at the given level. Used by the search by name ID protocol. We determine
+     * the eligibility of a node as a ladder by checking its availability and comparing its name ID with
+     * the target name ID.
+     * @param level the level.
+     * @param target the target name ID of the search.
+     * @return the best ladder on the right.
+     */
+    SkipNodeIdentity getRightLadder(int level, String target);
 }

@@ -239,6 +239,14 @@ public class SkipNode implements SkipNodeInterface {
         return false;
     }
 
+    /**
+     * Search for the given numID
+     * @param numID The numID to search for
+     * @return The SkipNodeIdentity of the node with the given numID. If it does not exist, returns the SkipNodeIdentity of the SkipNode with NumID closest to the given
+     * numID from the direction the search is initiated.
+     * For example: Initiating a search for a SkipNode with NumID 50 from a SnipNode with NumID 10 will return the SkipNodeIdentity of the SnipNode with NumID 50 is it exists. If
+     * no such SnipNode exists, the SkipNodeIdentity of the SnipNode whose NumID is closest to 50 among the nodes whose NumID is less than 50 is returned.
+     */
     @Override
     public SkipNodeIdentity searchByNumID(int numID) {
         // If this is the node the search request is looking for, return its identity
@@ -380,6 +388,14 @@ public class SkipNode implements SkipNodeInterface {
         return lookupTable.updateRight(snId, level);
     }
 
+    /**
+     * Returns the left ladder at the given level. Used by the search by name ID protocol. We determine
+     * the eligibility of a node as a ladder by checking its availability and comparing its name ID with
+     * the target name ID.
+     * @param level the level.
+     * @param target the target name ID of the search.
+     * @return the best ladder on the left.
+     */
     @Override
     public SkipNodeIdentity getLeftLadder(int level, String target) {
         // First, check if the target exists in my lookup table.
@@ -407,6 +423,14 @@ public class SkipNode implements SkipNodeInterface {
         return LookupTable.EMPTY_NODE;
     }
 
+    /**
+     * Returns the right ladder at the given level. Used by the search by name ID protocol. We determine
+     * the eligibility of a node as a ladder by checking its availability and comparing its name ID with
+     * the target name ID.
+     * @param level the level.
+     * @param target the target name ID of the search.
+     * @return the best ladder on the right.
+     */
     @Override
     public SkipNodeIdentity getRightLadder(int level, String target) {
         // First, check if the target exists in my lookup table.
