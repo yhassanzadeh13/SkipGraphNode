@@ -1,10 +1,12 @@
 package middlelayer;
+import lookup.TentativeTable;
 import skipnode.SkipNodeIdentity;
 import skipnode.SkipNodeInterface;
 import underlay.Underlay;
 import underlay.packets.*;
 import underlay.packets.requests.*;
-import underlay.packets.responses.IdentityListResponse;
+import underlay.packets.responses.AckResponse;
+import underlay.packets.responses.TableResponse;
 import underlay.packets.responses.IdentityResponse;
 
 import java.util.List;
@@ -76,14 +78,17 @@ public class MiddleLayer {
             case GetLeftNode:
                 identity = overlay.getLeftNode(((GetLeftNodeRequest) request).level);
                 return new IdentityResponse(identity);
-            case GetPotentialNeighbors:
-                List<SkipNodeIdentity> neighbors = overlay.getPotentialNeighbors(((GetPotentialNeighborsRequest) request).newNode,
-                        ((GetPotentialNeighborsRequest) request).level);
-                return new IdentityListResponse(neighbors);
+            case AcquireNeighbors:
+                TentativeTable neighbors = overlay.acquireNeighbors(((AcquireNeighborsRequest) request).newNode,
+                        ((AcquireNeighborsRequest) request).level);
+                return new TableResponse(neighbors);
             case FindLadder:
                 identity = overlay.findLadder(((FindLadderRequest) request).level, ((FindLadderRequest) request).direction,
                         ((FindLadderRequest) request).target);
                 return new IdentityResponse(identity);
+            case AnnounceNeighbor:
+                overlay.announceNeighbor(((AnnounceNeighborRequest) request).newNeighbor);
+                return new AckResponse();
             default:
                 return null;
         }
@@ -145,13 +150,18 @@ public class MiddleLayer {
         return ((IdentityResponse) r).identity;
     }
 
-    public List<SkipNodeIdentity> getPotentialNeighbors(String destinationAddress, int port, SkipNodeIdentity newNodeID, int level) {
-        Response r = send(destinationAddress, port, new GetPotentialNeighborsRequest(newNodeID, level));
-        return ((IdentityListResponse) r).identities;
+    public TentativeTable acquireNeighbors(String destinationAddress, int port, SkipNodeIdentity newNodeID, int level) {
+        Response r = send(destinationAddress, port, new AcquireNeighborsRequest(newNodeID, level));
+        return ((TableResponse) r).table;
     }
 
     public SkipNodeIdentity findLadder(String destinationAddress, int port, int level, int direction, String target) {
         Response r = send(destinationAddress, port, new FindLadderRequest(level, direction, target));
         return ((IdentityResponse) r).identity;
+    }
+
+    public AckResponse announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor) {
+        Response r = send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor));
+        return (AckResponse) r;
     }
 }

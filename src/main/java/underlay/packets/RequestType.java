@@ -12,6 +12,8 @@ public enum RequestType {
     UpdateRightNode,
     GetLeftNode,
     GetRightNode,
-    GetPotentialNeighbors,
-    FindLadder
+    AcquireNeighbors,
+    FindLadder,
+    AnnounceNeighbor,
+    IsAvailable
 }

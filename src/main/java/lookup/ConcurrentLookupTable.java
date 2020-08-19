@@ -119,31 +119,36 @@ public class ConcurrentLookupTable implements LookupTable {
     }
 
     @Override
-    public List<SkipNodeIdentity> getPotentialNeighbors(SkipNodeIdentity owner, int newNumID, int level) {
+    public TentativeTable acquireNeighbors(SkipNodeIdentity owner, int newNumID, String newNameID, int level) {
         lock.readLock().lock();
-        List<SkipNodeIdentity> potentialNeighbors = new ArrayList<>();
-        potentialNeighbors.add(owner);
+        List<List<SkipNodeIdentity>> newTable = new ArrayList<>();
+        newTable.add(new ArrayList<>());
+        newTable.get(0).add(owner);
         if(newNumID < owner.getNumID() && !getLeft(level).equals(LookupTable.EMPTY_NODE))
-            potentialNeighbors.add(getLeft(level));
+            newTable.get(0).add(getLeft(level));
         else if(!getRight(level).equals(LookupTable.EMPTY_NODE))
-            potentialNeighbors.add(getRight(level));
+            newTable.get(0).add(getRight(level));
         lock.readLock().unlock();
-        return potentialNeighbors;
+        return new TentativeTable(false, level, newTable);
     }
 
-    // Given a set of new neighbors, puts them into the correct place (left or right).
+    /**
+     * Given an incomplete tentative table, inserts the given level neighbors to their correct positions.
+     * @param owner the owner of the lookup table.
+     * @param tentativeTable the tentative table containing list of potential neighbors.
+     */
     @Override
-    public void initializeNeighbors(SkipNodeIdentity owner, List<SkipNodeIdentity> potentialNeighbors, int level) {
-        SkipNodeIdentity left = potentialNeighbors.stream()
+    public void initializeTable(SkipNodeIdentity owner, TentativeTable tentativeTable) {
+        SkipNodeIdentity left = tentativeTable.neighbors.get(0).stream()
                 .filter(x -> x.getNumID() <= owner.getNumID())
                 .findFirst()
                 .orElse(LookupTable.EMPTY_NODE);
-        SkipNodeIdentity right = potentialNeighbors.stream()
+        SkipNodeIdentity right = tentativeTable.neighbors.get(0).stream()
                 .filter(x -> x.getNumID() > owner.getNumID())
                 .findFirst()
                 .orElse(LookupTable.EMPTY_NODE);
-        updateLeft(left, level);
-        updateRight(right, level);
+        updateLeft(left, tentativeTable.specificLevel);
+        updateRight(right, tentativeTable.specificLevel);
     }
 
     private int getIndex(direction dir, int level) {
