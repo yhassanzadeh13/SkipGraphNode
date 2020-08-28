@@ -22,6 +22,56 @@ class SkipNodeTest {
     static int NODES = 16;
 
     @Test
+    void concurrentInsertions() {
+        // First, construct the underlays.
+        List<Underlay> underlays = new ArrayList<>(NODES);
+        for(int i = 0; i < NODES; i++) {
+            Underlay underlay = Underlay.newDefaultUnderlay();
+            underlay.initialize(STARTING_PORT + i);
+            underlays.add(underlay);
+        }
+        // Then, construct the local skip graph without manually constructing the lookup tables.
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        // Create the middle layers.
+        for(int i = 0; i < NODES; i++) {
+            MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
+            // Assign the middle layer to the underlay & overlay.
+            underlays.get(i).setMiddleLayer(middleLayer);
+            g.getNodes().get(i).setMiddleLayer(middleLayer);
+        }
+        // Insert the first node.
+        g.getNodes().get(0).insert(null, -1);
+        Thread[] threads = new Thread[NODES-1];
+        // Construct the threads.
+        for(int i = 1; i <= threads.length; i++) {
+            final SkipNode introducer = g.getNodes().get(i-1);
+            final SkipNode node = g.getNodes().get(i);
+            threads[i-1] = new Thread(() -> {
+                node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
+            });
+        }
+        // Initiate the insertions.
+        for(Thread t : threads) t.start();
+        // Wait for the insertions to complete.
+        for(Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                System.err.println("Could not join the thread.");
+                e.printStackTrace();
+            }
+        }
+        // Create a map of num ids to their corresponding lookup tables.
+        Map<Integer, LookupTable> tableMap = g.getNodes().stream()
+                .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
+        // Check the correctness of the tables.
+        for(SkipNode n : g.getNodes()) {
+            tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
+            tableConsistencyCheck(tableMap, n);
+        }
+    }
+
+    @Test
     void insert() {
         // First, construct the underlays.
         List<Underlay> underlays = new ArrayList<>(NODES);
