@@ -21,6 +21,95 @@ class SkipNodeTest {
     static int STARTING_PORT = 8080;
     static int NODES = 16;
 
+    static int SEARCH_THRESHOLD = 500;
+    static int SEARCH_THREADS = 500;
+
+    @Test
+    void concurrentInsertionsAndSearches() {
+        // First, construct the underlays.
+        List<Underlay> underlays = new ArrayList<>(NODES);
+        for(int i = 0; i < NODES; i++) {
+            Underlay underlay = Underlay.newDefaultUnderlay();
+            underlay.initialize(STARTING_PORT + i);
+            underlays.add(underlay);
+        }
+        // Then, construct the local skip graph without manually constructing the lookup tables.
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        // Create the middle layers.
+        for(int i = 0; i < NODES; i++) {
+            MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
+            // Assign the middle layer to the underlay & overlay.
+            underlays.get(i).setMiddleLayer(middleLayer);
+            g.getNodes().get(i).setMiddleLayer(middleLayer);
+        }
+        // Insert the first node.
+        g.getNodes().get(0).insert(null, -1);
+        // Construct the threads.
+        Thread[] insertionThreads = new Thread[NODES-1];
+        for(int i = 1; i <= insertionThreads.length; i++) {
+            final SkipNode introducer = g.getNodes().get(i-1);
+            final SkipNode node = g.getNodes().get(i);
+            insertionThreads[i-1] = new Thread(() -> {
+                node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
+            });
+        }
+        // Construct the search threads (threshold).
+        Thread[] searchThresholdThreads = new Thread[SEARCH_THRESHOLD];
+        for(int i = 0; i < searchThresholdThreads.length; i++) {
+            // Choose two random nodes.
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+            searchThresholdThreads[i] = new Thread(() -> {
+                initiator.searchByNameID(target.getNameID());
+            });
+        }
+        // Start the threads.
+        for(Thread t : insertionThreads) t.start();
+        for(Thread t : searchThresholdThreads) t.start();
+        // Construct the search threads.
+        Thread[] searchThreads = new Thread[SEARCH_THREADS];
+        for(int i = 0; i < searchThreads.length; i++) {
+            // Choose two random nodes.
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+            searchThreads[i] = new Thread(() -> {
+                SkipNodeIdentity res = initiator.searchByNameID(target.getNameID());
+                Assertions.assertEquals(target.getNameID(), res.getNameID());
+            });
+        }
+        // Complete the search threshold threads.
+        try {
+            for(Thread t : searchThresholdThreads) t.join();
+        } catch(InterruptedException e) {
+            System.err.println("Could not join the thread.");
+            e.printStackTrace();
+        }
+        // Wait before executing searches.
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            System.err.println("Could not sleep.");
+            e.printStackTrace();
+        }
+        // Start the search threads.
+        for(Thread t : searchThreads) t.start();
+        // Complete all remaining threads.
+        try {
+            for(Thread t : insertionThreads) t.join();
+            for(Thread t : searchThreads) t.join();
+        } catch(InterruptedException e) {
+            System.err.println("Could not join the thread.");
+            e.printStackTrace();
+        }
+        for(int i = 0; i < searchThreads.length; i++) {
+            // Choose two random nodes.
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+            SkipNodeIdentity res = initiator.searchByNameID(target.getNameID());
+            Assertions.assertEquals(target.getNameID(), res.getNameID());
+        }
+    }
+
     @Test
     void concurrentInsertions() {
         // First, construct the underlays.
