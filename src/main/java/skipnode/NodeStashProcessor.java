@@ -36,7 +36,7 @@ public class NodeStashProcessor implements Runnable {
                     for (int j = level; j >= 0; j--) {
                         backupTableRef.addLeftNode(n, j);
                     }
-                } else if (!backupTableRef.getRights(level).contains(n)) {
+                } else if (n.getNumID() >= ownIdentity.getNumID() && !backupTableRef.getRights(level).contains(n)) {
                     for (int j = level; j >= 0; j--) {
                         backupTableRef.addRightNode(n, j);
                     }

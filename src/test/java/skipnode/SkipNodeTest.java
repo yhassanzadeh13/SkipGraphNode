@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
-    static int NODES = 16;
+    static int NODES = 32;
 
-    static int SEARCH_THRESHOLD = 500;
+    static int SEARCH_THRESHOLD = 5000;
     static int SEARCH_THREADS = 500;
 
     @Test
@@ -47,25 +47,29 @@ class SkipNodeTest {
         // Construct the threads.
         Thread[] insertionThreads = new Thread[NODES-1];
         for(int i = 1; i <= insertionThreads.length; i++) {
-            final SkipNode introducer = g.getNodes().get(i-1);
+            final SkipNode introducer = g.getNodes().get((int) (Math.random() * (i-1)));
             final SkipNode node = g.getNodes().get(i);
             insertionThreads[i-1] = new Thread(() -> {
                 node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
             });
         }
-        // Construct the search threads (threshold).
-        Thread[] searchThresholdThreads = new Thread[SEARCH_THRESHOLD];
-        for(int i = 0; i < searchThresholdThreads.length; i++) {
+        // Start the insertion threads.
+        for(Thread t : insertionThreads) t.start();
+        // Wait for them to complete.
+        for(Thread t : insertionThreads) {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
+        for(int i = 0; i < SEARCH_THRESHOLD; i++) {
             // Choose two random nodes.
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
-            searchThresholdThreads[i] = new Thread(() -> {
-                initiator.searchByNameID(target.getNameID());
-            });
+            initiator.searchByNameID(target.getNameID());
         }
-        // Start the threads.
-        for(Thread t : insertionThreads) t.start();
-        for(Thread t : searchThresholdThreads) t.start();
         // Construct the search threads.
         Thread[] searchThreads = new Thread[SEARCH_THREADS];
         for(int i = 0; i < searchThreads.length; i++) {
@@ -77,36 +81,30 @@ class SkipNodeTest {
                 Assertions.assertEquals(target.getNameID(), res.getNameID());
             });
         }
-        // Complete the search threshold threads.
-        try {
-            for(Thread t : searchThresholdThreads) t.join();
-        } catch(InterruptedException e) {
-            System.err.println("Could not join the thread.");
-            e.printStackTrace();
-        }
-        // Wait before executing searches.
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            System.err.println("Could not sleep.");
-            e.printStackTrace();
-        }
         // Start the search threads.
         for(Thread t : searchThreads) t.start();
-        // Complete all remaining threads.
+        // Complete the threads.
         try {
-            for(Thread t : insertionThreads) t.join();
             for(Thread t : searchThreads) t.join();
         } catch(InterruptedException e) {
             System.err.println("Could not join the thread.");
             e.printStackTrace();
         }
+        // Perform searches and check their correctness.
         for(int i = 0; i < searchThreads.length; i++) {
             // Choose two random nodes.
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
             SkipNodeIdentity res = initiator.searchByNameID(target.getNameID());
             Assertions.assertEquals(target.getNameID(), res.getNameID());
+        }
+        // Create a map of num ids to their corresponding lookup tables.
+        Map<Integer, LookupTable> tableMap = g.getNodes().stream()
+                .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
+        // Check the correctness & consistency of the tables.
+        for(SkipNode n : g.getNodes()) {
+            tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
+            tableConsistencyCheck(tableMap, n);
         }
     }
 
@@ -153,7 +151,7 @@ class SkipNodeTest {
         // Create a map of num ids to their corresponding lookup tables.
         Map<Integer, LookupTable> tableMap = g.getNodes().stream()
                 .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
-        // Check the correctness of the tables.
+        // Check the correctness & consistency of the tables.
         for(SkipNode n : g.getNodes()) {
             tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
             tableConsistencyCheck(tableMap, n);

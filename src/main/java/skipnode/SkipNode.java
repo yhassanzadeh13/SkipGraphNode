@@ -97,6 +97,19 @@ public class SkipNode implements SkipNodeInterface {
         SkipNodeIdentity searchResult = middleLayer.searchByNumID(introducerAddress, introducerPort, numID);
         // Inform my new neighbor about the insertion and receive my new 0-level neighbors (or all of my neighbors).
         TentativeTable newNeighbors = middleLayer.acquireNeighbors(searchResult.getAddress(), searchResult.getPort(), getIdentity(), 0);
+        // Exponential backoff.
+        int trial = 1;
+        while(!newNeighbors.complete) {
+            int backoffTime = (int) (Math.random() * Math.pow(2, trial));
+            trial++;
+            try {
+                Thread.sleep(backoffTime);
+            } catch (InterruptedException e) {
+                System.err.println("[SkipNode.insert] Could not back-off.");
+                e.printStackTrace();
+            }
+            newNeighbors = middleLayer.acquireNeighbors(searchResult.getAddress(), searchResult.getPort(), getIdentity(), 0);
+        }
         lookupTable.initializeTable(getIdentity(), newNeighbors);
         // If the received `newNeighbors` tentative table was a complete table, we do not need
         // to proceed the insertion. All of our neighbors were already included in the table.
@@ -218,6 +231,11 @@ public class SkipNode implements SkipNodeInterface {
      */
     @Override
     public TentativeTable acquireNeighbors(SkipNodeIdentity newNeighbor, int level) {
+        // If the node is currently being inserted or is being used as a bootstrapper, return an invalid table. The
+        // requester needs to retry using exponential backoff.
+        if(insertionLock.isLocked()) {
+            return new TentativeTable(false, -1, null);
+        }
         // Get the potential neighbors of the new node at this level.
         insertionLock.lock();
         TentativeTable t = lookupTable.acquireNeighbors(getIdentity(), newNeighbor.getNumID(), newNeighbor.getNameID(), level);
