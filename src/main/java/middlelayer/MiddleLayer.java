@@ -1,14 +1,12 @@
 package middlelayer;
 import lookup.TentativeTable;
+import skipnode.SearchResult;
 import skipnode.SkipNodeIdentity;
 import skipnode.SkipNodeInterface;
 import underlay.Underlay;
 import underlay.packets.*;
 import underlay.packets.requests.*;
-import underlay.packets.responses.AckResponse;
-import underlay.packets.responses.BooleanResponse;
-import underlay.packets.responses.TableResponse;
-import underlay.packets.responses.IdentityResponse;
+import underlay.packets.responses.*;
 
 import java.util.List;
 
@@ -49,17 +47,18 @@ public class MiddleLayer {
      */
     public Response receive(Request request) {
         SkipNodeIdentity identity;
+        SearchResult result;
         switch (request.type) {
             case SearchByNameID:
-                identity = overlay.searchByNameID(((SearchByNameIDRequest) request).targetNameID);
-                return new IdentityResponse(identity);
+                result = overlay.searchByNameID(((SearchByNameIDRequest) request).targetNameID);
+                return new SearchResultResponse(result);
             case SearchByNameIDRecursive:
-                identity = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
+                result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
                         ((SearchByNameIDRecursiveRequest) request).right,
                         ((SearchByNameIDRecursiveRequest) request).target,
                         ((SearchByNameIDRecursiveRequest) request).level,
                         ((SearchByNameIDRecursiveRequest) request).path);
-                return new IdentityResponse(identity);
+                return new SearchResultResponse(result);
             case SearchByNumID:
                 identity = overlay.searchByNumID(((SearchByNumIDRequest) request).targetNumID);
                 return new IdentityResponse(identity);
@@ -112,18 +111,18 @@ public class MiddleLayer {
     and can abstract away all the details, allowing for it to be used as if it was simply available locally.
      */
 
-    public SkipNodeIdentity searchByNameID(String destinationAddress, int port, String nameID) {
+    public SearchResult searchByNameID(String destinationAddress, int port, String nameID) {
         // Send the request through the underlay
         Response response = this.send(destinationAddress, port, new SearchByNameIDRequest(nameID));
-        return ((IdentityResponse) response).identity;
+        return ((SearchResultResponse) response).result;
     }
 
-    public SkipNodeIdentity searchByNameIDRecursive(String destinationAddress, int port, SkipNodeIdentity left,
+    public SearchResult searchByNameIDRecursive(String destinationAddress, int port, SkipNodeIdentity left,
                                                     SkipNodeIdentity right, String target, int level,
                                                     List<SkipNodeIdentity> path) {
         // Send the request through the underlay.
         Response response = this.send(destinationAddress, port, new SearchByNameIDRecursiveRequest(left, right, target, level, path));
-        return ((IdentityResponse) response).identity;
+        return ((SearchResultResponse) response).result;
     }
 
     public SkipNodeIdentity searchByNumID(String destinationAddress, int port, int numID) {

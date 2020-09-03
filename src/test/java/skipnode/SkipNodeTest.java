@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
-    static int NODES = 32;
+    static int NODES = 8;
 
-    static int SEARCH_THRESHOLD = 5000;
+    static int SEARCH_THRESHOLD = 10000;
     static int SEARCH_THREADS = 500;
 
     @Test
@@ -64,11 +64,16 @@ class SkipNodeTest {
             }
         }
         // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
-        for(int i = 0; i < SEARCH_THRESHOLD; i++) {
-            // Choose two random nodes.
-            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
-            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
-            initiator.searchByNameID(target.getNameID());
+        // For now, we make sure that we are performing multiple searches from every node to every other node. The
+        // backup tables should slowly fill out correctly in this manner.
+        for(int k = 0; k < 1; k++) {
+            for (int i = 0; i < NODES; i++) {
+                final SkipNode initiator = g.getNodes().get(i);
+                for (int j = 0; j < NODES; j++) {
+                    final SkipNode target = g.getNodes().get(j);
+                    initiator.searchByNameID(target.getNameID());
+                }
+            }
         }
         // Construct the search threads.
         Thread[] searchThreads = new Thread[SEARCH_THREADS];
@@ -77,8 +82,8 @@ class SkipNodeTest {
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
             searchThreads[i] = new Thread(() -> {
-                SkipNodeIdentity res = initiator.searchByNameID(target.getNameID());
-                Assertions.assertEquals(target.getNameID(), res.getNameID());
+                SearchResult res = initiator.searchByNameID(target.getNameID());
+                Assertions.assertEquals(target.getNameID(), res.result.getNameID());
             });
         }
         // Start the search threads.
@@ -95,8 +100,8 @@ class SkipNodeTest {
             // Choose two random nodes.
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
-            SkipNodeIdentity res = initiator.searchByNameID(target.getNameID());
-            Assertions.assertEquals(target.getNameID(), res.getNameID());
+            SearchResult res = initiator.searchByNameID(target.getNameID());
+            Assertions.assertEquals(target.getNameID(), res.result.getNameID());
         }
         // Create a map of num ids to their corresponding lookup tables.
         Map<Integer, LookupTable> tableMap = g.getNodes().stream()
@@ -214,8 +219,8 @@ class SkipNodeTest {
             SkipNode initiator = g.getNodes().get(i);
             for(int j = 0; j < NODES; j++) {
                 SkipNode target = g.getNodes().get(j);
-                SkipNodeIdentity result = initiator.searchByNameID(target.getNameID());
-                Assertions.assertEquals(target.getIdentity(), result);
+                SearchResult result = initiator.searchByNameID(target.getNameID());
+                Assertions.assertEquals(target.getIdentity(), result.result);
             }
         }
         underlays.forEach(Underlay::terminate);

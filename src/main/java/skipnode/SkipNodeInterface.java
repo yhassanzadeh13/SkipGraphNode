@@ -66,9 +66,9 @@ public interface SkipNodeInterface {
      * Search for the given nameID
      * @param nameID The nameID to search for
      * @return The SkipNodeIdentity of the SkipNode with the given nameID. If it does not exist, returns the SkipNodeIdentity of the SkipNode which shares the longest
-     * prefix among the nodes in the SkipGraph
+     * prefix among the nodes in the SkipGraph. Also contains the piggybacked information.
      */
-    SkipNodeIdentity searchByNameID(String nameID);
+    SearchResult searchByNameID(String nameID);
 
     /**
      * Used by the `searchByNameID` method. Implements a recursive name ID search algorithm.
@@ -79,7 +79,7 @@ public interface SkipNodeInterface {
      * @param path the list of node in the current search path.
      * @return the identity of the node with the given name ID, or the node with the closest name ID.
      */
-    SkipNodeIdentity searchByNameIDRecursive(SkipNodeIdentity left, SkipNodeIdentity right, String target, int level, List<SkipNodeIdentity> path);
+    SearchResult searchByNameIDRecursive(SkipNodeIdentity left, SkipNodeIdentity right, String target, int level, List<SkipNodeIdentity> path);
 
     /**
      * Search for the given nameID on the given level. Helper method for searchByNameID

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -30,8 +31,7 @@ public class SkipNode implements SkipNodeInterface {
     private final ReentrantLock insertionLock = new ReentrantLock();
 
     // List of nodes that should be included in the lookup table, received through search requests.
-    private final List<SkipNodeIdentity> nodeStash;
-    private final ReentrantLock nodeStashLock = new ReentrantLock();
+    private final LinkedBlockingDeque<SkipNodeIdentity> nodeStash;
     private final NodeStashProcessor nodeStashProcessor;
     private final Thread nodeStashProcessorThread;
 
@@ -44,11 +44,10 @@ public class SkipNode implements SkipNodeInterface {
         this.numID = snID.getNumID();
         this.nameID = snID.getNameID();
         this.lookupTable = lookupTable;
-        nodeStash = new LinkedList<>();
+        nodeStash = new LinkedBlockingDeque<>();
         // Create & start the thread that will be responsible for handling the node stash.
         if(lookupTable instanceof ConcurrentBackupTable) {
-            nodeStashProcessor = new NodeStashProcessor(nodeStash, nodeStashLock,
-                    (ConcurrentBackupTable) lookupTable, getIdentity());
+            nodeStashProcessor = new NodeStashProcessor(nodeStash, (ConcurrentBackupTable) lookupTable, getIdentity());
             nodeStashProcessorThread = new Thread(nodeStashProcessor);
             nodeStashProcessorThread.start();
         } else {
@@ -99,7 +98,7 @@ public class SkipNode implements SkipNodeInterface {
         TentativeTable newNeighbors = middleLayer.acquireNeighbors(searchResult.getAddress(), searchResult.getPort(), getIdentity(), 0);
         // Exponential backoff.
         int trial = 1;
-        while(!newNeighbors.complete) {
+        while(newNeighbors.neighbors == null) {
             int backoffTime = (int) (Math.random() * Math.pow(2, trial));
             trial++;
             try {
@@ -340,21 +339,25 @@ public class SkipNode implements SkipNodeInterface {
      * @return the node with the name ID most similar to the target name ID.
      */
     @Override
-    public SkipNodeIdentity searchByNameID(String targetNameID) {
+    public SearchResult searchByNameID(String targetNameID) {
+        List<SkipNodeIdentity> path = new LinkedList<>();
         if(nameID.equals(targetNameID)) {
-            return getIdentity();
+            path.add(getIdentity());
+            return new SearchResult(getIdentity(), path);
         }
         // If the node is not completely inserted yet, return a tentative identity.
-        if(insertionLock.isLocked()) {
-            return unavailableIdentity;
+        if(!isAvailable()) {
+            path.add(getIdentity());
+            return new SearchResult(unavailableIdentity, path);
         }
         // Find the level in which the search should be started from.
         int level = SkipNodeIdentity.commonBits(nameID, targetNameID);
         if(level < 0) {
-            return getIdentity();
+            path.add(getIdentity());
+            return new SearchResult(getIdentity(), path);
         }
         // Initiate the search.
-        return middleLayer.searchByNameIDRecursive(address, port, getIdentity(), getIdentity(), targetNameID, level, new LinkedList<>());
+        return middleLayer.searchByNameIDRecursive(address, port, getIdentity(), getIdentity(), targetNameID, level, path);
     }
 
     /**
@@ -366,14 +369,15 @@ public class SkipNode implements SkipNodeInterface {
      * @return the SkipNodeIdentity of the closest SkipNode which has the common prefix length larger than `level`.
      */
     @Override
-    public SkipNodeIdentity searchByNameIDRecursive(SkipNodeIdentity potentialLeftLadder, SkipNodeIdentity potentialRightLadder,
+    public SearchResult searchByNameIDRecursive(SkipNodeIdentity potentialLeftLadder, SkipNodeIdentity potentialRightLadder,
                                                     String targetNameID, int level, List<SkipNodeIdentity> path) {
-        // Add the current path to the stash of nodes that needs to be processed.
-        nodeStashLock.lock();
-        nodeStash.addAll(path);
-        nodeStashLock.unlock();
+        // Update the path.
         path.add(getIdentity());
-        if(nameID.equals(targetNameID)) return getIdentity();
+        if(nameID.equals(targetNameID)) {
+            // Update the stash.
+            nodeStash.addAll(path);
+            return new SearchResult(getIdentity(), path);
+        }
         // Buffer contains the `most similar node` to return in case we cannot climb up anymore. At first, we try to set this to the
         // non null potential ladder.
         SkipNodeIdentity buffer = (!potentialLeftLadder.equals(LookupTable.EMPTY_NODE)) ? potentialLeftLadder : potentialRightLadder;
@@ -381,8 +385,20 @@ public class SkipNode implements SkipNodeInterface {
         while(SkipNodeIdentity.commonBits(targetNameID, potentialLeftLadder.getNameID()) <= level
                 && SkipNodeIdentity.commonBits(targetNameID, potentialRightLadder.getNameID()) <= level) {
             // Return the potential ladder as the result if it is the result we are looking for.
-            if(potentialLeftLadder.getNameID().equals(targetNameID)) return potentialLeftLadder;
-            if(potentialRightLadder.getNameID().equals(targetNameID)) return potentialRightLadder;
+            if(potentialLeftLadder.getNameID().equals(targetNameID)) {
+                // Update the path.
+                path.add(potentialLeftLadder);
+                // Update the stash.
+                nodeStash.addAll(path);
+                return new SearchResult(potentialLeftLadder, path);
+            }
+            if(potentialRightLadder.getNameID().equals(targetNameID)) {
+                // Update the path.
+                path.add(potentialRightLadder);
+                // Update the stash.
+                nodeStash.addAll(path);
+                return new SearchResult(potentialRightLadder, path);
+            }
             // Expand the search window on the level.
             if(!potentialLeftLadder.equals(LookupTable.EMPTY_NODE)) {
                 buffer = potentialLeftLadder;
@@ -397,21 +413,35 @@ public class SkipNode implements SkipNodeInterface {
                 level = SkipNodeIdentity.commonBits(targetNameID, potentialRightLadder.getNameID());
                 SkipNodeIdentity newLeft = middleLayer.getLeftNode(potentialRightLadder.getAddress(), potentialRightLadder.getPort(), level);
                 SkipNodeIdentity newRight = middleLayer.getRightNode(potentialRightLadder.getAddress(), potentialRightLadder.getPort(), level);
-                return middleLayer.searchByNameIDRecursive(potentialRightLadder.getAddress(), potentialRightLadder.getPort(),
+                SearchResult r = middleLayer.searchByNameIDRecursive(potentialRightLadder.getAddress(), potentialRightLadder.getPort(),
                         newLeft, newRight, targetNameID, level, path);
+                // Update the stash.
+                nodeStash.addAll(r.path);
+                return r;
             } else if(SkipNodeIdentity.commonBits(targetNameID, potentialLeftLadder.getNameID()) > level) {
                 level = SkipNodeIdentity.commonBits(targetNameID, potentialLeftLadder.getNameID());
                 SkipNodeIdentity newLeft = middleLayer.getLeftNode(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(), level);
                 SkipNodeIdentity newRight = middleLayer.getRightNode(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(), level);
-                return middleLayer.searchByNameIDRecursive(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(),
+                SearchResult r = middleLayer.searchByNameIDRecursive(potentialLeftLadder.getAddress(), potentialLeftLadder.getPort(),
                         newLeft, newRight, targetNameID, level, path);
+                // Update the stash.
+                nodeStash.addAll(r.path);
+                return r;
             }
             // If we have expanded more than the length of the level, then return the most similar node (buffer).
             if(potentialLeftLadder.equals(LookupTable.EMPTY_NODE) && potentialRightLadder.equals(LookupTable.EMPTY_NODE)) {
-                return buffer;
+                // Update the path.
+                path.add(buffer);
+                // Update the stash.
+                nodeStash.addAll(path);
+                return new SearchResult(buffer, path);
             }
         }
-        return buffer;
+        // Update the path.
+        path.add(buffer);
+        // Update the stash.
+        nodeStash.addAll(path);
+        return new SearchResult(buffer, path);
     }
 
 
