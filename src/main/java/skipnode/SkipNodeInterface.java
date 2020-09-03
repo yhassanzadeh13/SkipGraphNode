@@ -76,9 +76,10 @@ public interface SkipNodeInterface {
      * @param right the current right node.
      * @param target the target name ID.
      * @param level the current level.
+     * @param path the list of node in the current search path.
      * @return the identity of the node with the given name ID, or the node with the closest name ID.
      */
-    SkipNodeIdentity searchByNameIDRecursive(SkipNodeIdentity left, SkipNodeIdentity right, String target, int level);
+    SkipNodeIdentity searchByNameIDRecursive(SkipNodeIdentity left, SkipNodeIdentity right, String target, int level, List<SkipNodeIdentity> path);
 
     /**
      * Search for the given nameID on the given level. Helper method for searchByNameID
