@@ -21,7 +21,7 @@ class SkipNodeTest {
     static int STARTING_PORT = 8080;
     static int NODES = 8;
 
-    static int SEARCH_THRESHOLD = 10000;
+    static int SEARCH_THRESHOLD = 5000;
     static int SEARCH_THREADS = 500;
 
     @Test
@@ -66,14 +66,10 @@ class SkipNodeTest {
         // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
         // For now, we make sure that we are performing multiple searches from every node to every other node. The
         // backup tables should slowly fill out correctly in this manner.
-        for(int k = 0; k < 1; k++) {
-            for (int i = 0; i < NODES; i++) {
-                final SkipNode initiator = g.getNodes().get(i);
-                for (int j = 0; j < NODES; j++) {
-                    final SkipNode target = g.getNodes().get(j);
-                    initiator.searchByNameID(target.getNameID());
-                }
-            }
+        for(int k = 0; k < SEARCH_THRESHOLD; k++) {
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+            initiator.searchByNameID(target.getNameID());
         }
         // Construct the search threads.
         Thread[] searchThreads = new Thread[SEARCH_THREADS];
