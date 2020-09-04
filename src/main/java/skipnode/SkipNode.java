@@ -10,9 +10,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public class SkipNode implements SkipNodeInterface {
@@ -34,6 +32,7 @@ public class SkipNode implements SkipNodeInterface {
     private final LinkedBlockingDeque<SkipNodeIdentity> nodeStash;
     private final NodeStashProcessor nodeStashProcessor;
     private final Thread nodeStashProcessorThread;
+    private final ReentrantLock nodeStashLock = new ReentrantLock();
 
     // The identity to be returned in case the node is currently unreachable (i.e., being inserted.)
     private static final SkipNodeIdentity unavailableIdentity = LookupTable.EMPTY_NODE;
@@ -47,7 +46,8 @@ public class SkipNode implements SkipNodeInterface {
         nodeStash = new LinkedBlockingDeque<>();
         // Create & start the thread that will be responsible for handling the node stash.
         if(lookupTable instanceof ConcurrentBackupTable) {
-            nodeStashProcessor = new NodeStashProcessor(nodeStash, (ConcurrentBackupTable) lookupTable, getIdentity());
+            nodeStashProcessor = new NodeStashProcessor(nodeStash, (ConcurrentBackupTable) lookupTable, getIdentity(),
+                    nodeStashLock);
             nodeStashProcessorThread = new Thread(nodeStashProcessor);
             nodeStashProcessorThread.start();
         } else {
@@ -99,7 +99,7 @@ public class SkipNode implements SkipNodeInterface {
         // Exponential backoff.
         int trial = 1;
         while(newNeighbors.neighbors == null) {
-            int backoffTime = (int) (Math.random() * Math.pow(2, trial));
+            int backoffTime = (int) (Math.random() * Math.pow(2, trial) * 50);
             trial++;
             try {
                 Thread.sleep(backoffTime);

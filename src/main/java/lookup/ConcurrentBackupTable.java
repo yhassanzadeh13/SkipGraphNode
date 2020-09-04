@@ -2,6 +2,7 @@ package lookup;
 import skipnode.SkipNodeIdentity;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -121,7 +122,16 @@ public class ConcurrentBackupTable implements LookupTable {
     }
 
     public List<SkipNodeIdentity> addRightNode(SkipNodeIdentity node, int level) {
-        lock.writeLock().lock();
+        int trial = 1;
+        // Exponential backoff for writing.
+        while(!lock.writeLock().tryLock()) {
+            try {
+                Thread.sleep((int) (Math.random() * Math.pow(2, trial-1) * 50));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            trial++;
+        }
         int idx = getIndex(direction.RIGHT, level);
         List<SkipNodeIdentity> entry = nodes.get(idx);
         entry.add(node);
@@ -136,7 +146,16 @@ public class ConcurrentBackupTable implements LookupTable {
     }
 
     public List<SkipNodeIdentity> addLeftNode(SkipNodeIdentity node, int level) {
-        lock.writeLock().lock();
+        int trial = 1;
+        // Exponential backoff for writing.
+        while(!lock.writeLock().tryLock()) {
+            try {
+                Thread.sleep((int) (Math.random() * Math.pow(2, trial) * 50));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            trial++;
+        }
         int idx = getIndex(direction.LEFT, level);
         List<SkipNodeIdentity> entry = nodes.get(idx);
         entry.add(node);
