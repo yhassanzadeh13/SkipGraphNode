@@ -64,8 +64,6 @@ class SkipNodeTest {
             }
         }
         // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
-        // For now, we make sure that we are performing multiple searches from every node to every other node. The
-        // backup tables should slowly fill out correctly in this manner.
         for(int k = 0; k < SEARCH_THRESHOLD; k++) {
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
