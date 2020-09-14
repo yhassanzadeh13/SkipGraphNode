@@ -17,5 +17,7 @@ public enum RequestType {
     AnnounceNeighbor,
     IsAvailable,
     GetLeftLadder,
+    Increment,
+    Injection,
     GetRightLadder
 }

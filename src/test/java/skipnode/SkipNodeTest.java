@@ -21,11 +21,13 @@ class SkipNodeTest {
     static int STARTING_PORT = 8080;
     static int NODES = 8;
 
-    static int SEARCH_THRESHOLD = 5000;
+    static int SEARCH_THRESHOLD = 10000;
     static int SEARCH_THREADS = 500;
 
+    // In this test I call the increment a lot of times through different threads
+    // This tests whether all messages are in face received or not
     @Test
-    void concurrentInsertionsAndSearches() {
+    void concurrentIncrements() {
         // First, construct the underlays.
         List<Underlay> underlays = new ArrayList<>(NODES);
         for(int i = 0; i < NODES; i++) {
@@ -35,6 +37,63 @@ class SkipNodeTest {
         }
         // Then, construct the local skip graph without manually constructing the lookup tables.
         LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        // Create the middle layers.
+        for(int i = 0; i < NODES; i++) {
+            MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
+            // Assign the middle layer to the underlay & overlay.
+            underlays.get(i).setMiddleLayer(middleLayer);
+            g.getNodes().get(i).setMiddleLayer(middleLayer);
+        }
+        // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
+        for(int k = 0; k < SEARCH_THRESHOLD; k++) {
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+            initiator.searchByNameID(target.getNameID());
+        }
+        // Construct the search threads.
+        Thread[] searchThreads = new Thread[SEARCH_THREADS];
+        final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
+        for(int i = 0; i < searchThreads.length; i++) {
+            // Choose two random nodes.
+            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
+            searchThreads[i] = new Thread(() -> {
+//                SearchResult res = initiator.searchByNameID(target.getNameID());
+                initiator.increment(target.getIdentity(), 0);
+                initiator.increment(target.getIdentity(), 0);
+//                Assertions.assertEquals(target.getNameID(), res.result.getNameID());
+            });
+        }
+        // Start the search threads.
+        for(Thread t : searchThreads) t.start();
+        // Complete the threads.
+        try {
+            for(Thread t : searchThreads) t.join();
+        } catch(InterruptedException e) {
+            System.err.println("Could not join the thread.");
+            e.printStackTrace();
+        }
+        int sum = 0;
+        // One should be 2 * NUMTHREADS, rest should be 0
+        for (SkipNode node : g.getNodes()){
+            System.out.println(node.i);
+            sum+=node.i.get();
+        }
+        // This should be 2 * NUMTHREADS
+        System.out.println(sum);
+    }
+
+
+    @Test
+    void concurrentInsertionsAndSearches() {
+        // First, construct the underlays.
+        List<Underlay> underlays = new ArrayList<>(NODES);
+        for(int i = 0; i < NODES; i++) {
+            Underlay underlay = Underlay.newDefaultUnderlay();
+            underlay.initialize(STARTING_PORT + i + NODES);
+            underlays.add(underlay);
+        }
+        // Then, construct the local skip graph without manually constructing the lookup tables.
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES, false);
         // Create the middle layers.
         for(int i = 0; i < NODES; i++) {
             MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
@@ -53,22 +112,41 @@ class SkipNodeTest {
                 node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
             });
         }
+
         // Start the insertion threads.
         for(Thread t : insertionThreads) t.start();
         // Wait for them to complete.
         for(Thread t : insertionThreads) {
             try {
+//                t.start();
                 t.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+        StringBuilder sb = new StringBuilder();
+        for(SkipNode nd : g.getNodes()){
+            sb.append(nd.getIdentity() + " 's Backup Table\n");
+//            System.out.println(nd.getIdentity() + " 's Backup Table");
+//            System.out.println(nd.getLookupTable());
+            sb.append(nd.getLookupTable()+"\n");
+        }
+        final String excp = sb.toString();
         // We expect the lookup tables to converge to a correct state after SEARCH_THRESHOLD many searches.
         for(int k = 0; k < SEARCH_THRESHOLD; k++) {
             final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
             initiator.searchByNameID(target.getNameID());
         }
+
+        sb = new StringBuilder();
+        for(SkipNode nd : g.getNodes()){
+            sb.append(nd.getIdentity() + " 's Backup Table AFTER insertion\n");
+//            System.out.println(nd.getIdentity() + " 's Backup Table");
+//            System.out.println(nd.getLookupTable());
+            sb.append(nd.getLookupTable()+"\n");
+        }
+        final String fnl = sb.toString();
         // Construct the search threads.
         Thread[] searchThreads = new Thread[SEARCH_THREADS];
         for(int i = 0; i < searchThreads.length; i++) {
@@ -77,7 +155,7 @@ class SkipNodeTest {
             final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
             searchThreads[i] = new Thread(() -> {
                 SearchResult res = initiator.searchByNameID(target.getNameID());
-                Assertions.assertEquals(target.getNameID(), res.result.getNameID());
+                Assertions.assertEquals(target.getNameID(), res.result.getNameID(), "Source: " + initiator.getNumID()+" Target: "+target.getNameID()+" "+excp+"\n"+fnl);
             });
         }
         // Start the search threads.
@@ -113,11 +191,11 @@ class SkipNodeTest {
         List<Underlay> underlays = new ArrayList<>(NODES);
         for(int i = 0; i < NODES; i++) {
             Underlay underlay = Underlay.newDefaultUnderlay();
-            underlay.initialize(STARTING_PORT + i);
+            underlay.initialize(STARTING_PORT + i + 2 * NODES);
             underlays.add(underlay);
         }
         // Then, construct the local skip graph without manually constructing the lookup tables.
-        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES*2, false);
         // Create the middle layers.
         for(int i = 0; i < NODES; i++) {
             MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
@@ -163,11 +241,11 @@ class SkipNodeTest {
         List<Underlay> underlays = new ArrayList<>(NODES);
         for(int i = 0; i < NODES; i++) {
             Underlay underlay = Underlay.newDefaultUnderlay();
-            underlay.initialize(STARTING_PORT + i);
+            underlay.initialize(STARTING_PORT + i + 3 * NODES);
             underlays.add(underlay);
         }
         // Then, construct the local skip graph without manually constructing the lookup tables.
-        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES*3, false);
         // Create the middle layers.
         for(int i = 0; i < NODES; i++) {
             MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
@@ -194,11 +272,11 @@ class SkipNodeTest {
         List<Underlay> underlays = new ArrayList<>(NODES);
         for(int i = 0; i < NODES; i++) {
             Underlay underlay = Underlay.newDefaultUnderlay();
-            underlay.initialize(STARTING_PORT + i);
+            underlay.initialize(STARTING_PORT + i + 4 * NODES);
             underlays.add(underlay);
         }
         // Then, construct the local skip graph.
-        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT, false);
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES*4, false);
         // Create the middle layers.
         for(int i = 0; i < NODES; i++) {
             MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));

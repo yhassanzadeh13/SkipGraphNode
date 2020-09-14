@@ -98,6 +98,11 @@ public class MiddleLayer {
             case GetRightLadder:
                 identity = overlay.getRightLadder(((GetRightLadderRequest)request).level, ((GetRightLadderRequest)request).nameID);
                 return new IdentityResponse(identity);
+            case Increment:
+                identity = overlay.increment(((IncrementRequest)request).snId,((IncrementRequest)request).level);
+                return new IdentityResponse(identity);
+            case Injection:
+                return new BooleanResponse(overlay.inject(((InjectionRequest)request).snIds));
             default:
                 return null;
         }
@@ -194,5 +199,28 @@ public class MiddleLayer {
         // Send the request through the underlay
         Response r = send(destinationAddress, port, new GetRightLadderRequest(level, nameID));
         return ((IdentityResponse) r).identity;
+    }
+
+    public SkipNodeIdentity increment(String destinationAddress, int port, SkipNodeIdentity snId, int level){
+        // Send the request through the underlay
+        try{
+            Thread.sleep(10000);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        Response response = send(destinationAddress, port, new IncrementRequest(level, snId));
+        if (response==null){
+            System.exit(1);
+        }
+        return ((IdentityResponse) response).identity;
+    }
+
+    public boolean inject(String destinationAddress, int port, List<SkipNodeIdentity> snIds){
+        // Send the request through the underlay
+        Response response = send(destinationAddress, port, new InjectionRequest(snIds));
+        if (response==null){
+            System.exit(1);
+        }
+        return ((BooleanResponse) response).answer;
     }
 }

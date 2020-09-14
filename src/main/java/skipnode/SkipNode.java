@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -541,4 +542,37 @@ public class SkipNode implements SkipNodeInterface {
         return lookupTable.getLeft(level);
     }
 
+    /*
+    Test
+     */
+    AtomicInteger i = new AtomicInteger(0);
+    @Override
+    public SkipNodeIdentity increment(SkipNodeIdentity snId, int level) {
+//        System.out.println(snId+" "+level+" "+i);
+        if (level==0){
+            return middleLayer.increment(snId.getAddress(), snId.getPort(), snId, 1);
+        }else {
+//            System.out.println("incrementing");
+            i.addAndGet(1);//i += 1;
+//            System.out.println(i);
+            return new SkipNodeIdentity(""+i, i.get(), ""+i,i.get());
+        }
+    }
+
+    @Override
+    public boolean inject(List<SkipNodeIdentity> injections){
+//        nodeStashLock.lock();
+        nodeStash.addAll(injections);
+        return true;
+//        for(SkipNodeIdentity injection : injections){
+//
+//        }
+//        nodeStashLock.unlock();
+    }
+
+    private void pushOutNodes(List<SkipNodeIdentity> lst){
+        for (SkipNodeIdentity nd : lst){
+            middleLayer.inject(nd.getAddress(), nd.getPort(), lst);
+        }
+    }
 }

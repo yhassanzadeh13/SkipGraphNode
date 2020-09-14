@@ -36,6 +36,9 @@ public class NodeStashProcessor implements Runnable {
                 e.printStackTrace();
                 continue;
             }
+            if (n.equals(ownIdentity)) {
+                continue;
+            }
             int level = SkipNodeIdentity.commonBits(n.getNameID(), ownIdentity.getNameID());
             if (n.getNumID() < ownIdentity.getNumID()
                     && !backupTableRef.getLefts(level).contains(n)) {

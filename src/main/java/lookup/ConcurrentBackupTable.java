@@ -277,5 +277,31 @@ public class ConcurrentBackupTable implements LookupTable {
             return level*2+1;
         }
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("ConcurrentBackupTable");
+        sb.append('\n');
+        for(int i=getNumLevels()-1; i>=0; i--){
+            List<SkipNodeIdentity> lefts = getLefts(i);
+            sb.append("Level:\t");
+            sb.append(i);
+            sb.append('\n');
+            sb.append("Lefts:\t");
+            for(int j = lefts.size()-1; j>=0;j--){
+                sb.append(lefts.get(j).getNameID());
+                sb.append('\t');
+            }
+
+            sb.append("Rights:\t");
+            List<SkipNodeIdentity> rights = getRights(i);
+            for(int j=0; j<rights.size();j++){
+                sb.append(rights.get(j).getNameID());
+                sb.append('\t');
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
 }
 

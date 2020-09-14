@@ -138,4 +138,11 @@ public interface SkipNodeInterface {
      * @return the best ladder on the right.
      */
     SkipNodeIdentity getRightLadder(int level, String target);
+
+
+    /*
+    Test
+     */
+    SkipNodeIdentity increment(SkipNodeIdentity snId, int level);
+    boolean inject(List<SkipNodeIdentity> injections);
 }
