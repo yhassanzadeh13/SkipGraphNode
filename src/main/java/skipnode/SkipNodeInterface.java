@@ -116,6 +116,19 @@ public interface SkipNodeInterface {
      */
     boolean timerLocked(SkipNodeIdentity requester);
 
+    /**
+     *
+     * @return
+     */
+    boolean isLocked();
+
+    /**
+     *
+     * @param address
+     * @param port
+     * @return
+     */
+    boolean isLockedBy(String address, int port);
 
     /*
     Test

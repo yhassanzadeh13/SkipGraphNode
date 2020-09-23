@@ -34,11 +34,36 @@ public class MiddleLayer {
      * @return the response emitted by the remote client.
      */
     protected Response send(String destinationAddress, int port, Request request) {
-        // Bounce the request up.
-        if(destinationAddress.equals(underlay.getAddress()) && port == underlay.getPort()) {
-            return receive(request);
-        }
-        return underlay.sendMessage(destinationAddress, port, request);
+        // Fill out the request's sender information to be used by the remote middle layer.
+        request.senderAddress = underlay.getAddress();
+        request.senderPort = underlay.getPort();
+        Response r = null;
+        int trial = 0;
+        do {
+            trial++;
+            // Backoff.
+            if(trial > 1) {
+                int sleepTime = (int) (Math.random() * 2000);
+                try {
+                    System.out.println("[MiddleLayer.send] Backing off for " + sleepTime + " ms while sending " + request
+                            + " from " + underlay.getFullAddress() + " to " + destinationAddress + ":" + port + ".");
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    System.err.println("[MiddleLayer.send] Could not back off.");
+                    e.printStackTrace();
+                }
+            }
+            // Check if the destination address == address of this node.
+            if (destinationAddress.equals(underlay.getAddress()) && port == underlay.getPort()) {
+                // Bounce the request up.
+                r = receive(request);
+            } else {
+                // Or receive it from the remote client.
+                r = underlay.sendMessage(destinationAddress, port, request);
+            }
+        } while(r.locked);
+
+        return r;
     }
 
     /**
@@ -48,17 +73,21 @@ public class MiddleLayer {
     public Response receive(Request request) {
         SkipNodeIdentity identity;
         SearchResult result;
+        // If the overlay is locked, return a response denoting the client to try again later.
         switch (request.type) {
             case SearchByNameID:
+                if(overlay.isLocked()) return new Response(true);
                 result = overlay.searchByNameID(((SearchByNameIDRequest) request).targetNameID);
                 return new SearchResultResponse(result);
             case SearchByNameIDRecursive:
+                if(overlay.isLocked()) return new Response(true);
                 result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
                         ((SearchByNameIDRecursiveRequest) request).right,
                         ((SearchByNameIDRecursiveRequest) request).target,
                         ((SearchByNameIDRecursiveRequest) request).level);
                 return new SearchResultResponse(result);
             case SearchByNumID:
+                if(overlay.isLocked()) return new Response(true);
                 identity = overlay.searchByNumID(((SearchByNumIDRequest) request).targetNumID);
                 return new IdentityResponse(identity);
             case AcquireLock:
@@ -66,18 +95,33 @@ public class MiddleLayer {
             case ReleaseLock:
                 return new BooleanResponse(overlay.unlock(((ReleaseLockRequest) request).owner));
             case UpdateLeftNode:
+                // Can only be invoked when unlocked or by the lock owner.
+                if(overlay.isLocked() && !overlay.isLockedBy(request.senderAddress, request.senderPort))
+                    return new Response(true);
                 identity = overlay.updateLeftNode(((UpdateLeftNodeRequest) request).snId, ((UpdateLeftNodeRequest) request).level);
                 return new IdentityResponse(identity);
             case UpdateRightNode:
+                // Can only be invoked when unlocked or by the lock owner.
+                if(overlay.isLocked() && !overlay.isLockedBy(request.senderAddress, request.senderPort))
+                    return new Response(true);
                 identity = overlay.updateRightNode(((UpdateRightNodeRequest) request).snId, ((UpdateRightNodeRequest) request).level);
                 return new IdentityResponse(identity);
             case GetRightNode:
+                // Can only be invoked when unlocked or by the lock owner.
+                if(overlay.isLocked() && !overlay.isLockedBy(request.senderAddress, request.senderPort))
+                    return new Response(true);
                 identity = overlay.getRightNode(((GetRightNodeRequest) request).level);
                 return new IdentityResponse(identity);
             case GetLeftNode:
+                // Can only be invoked when unlocked or by the lock owner.
+                if(overlay.isLocked() && !overlay.isLockedBy(request.senderAddress, request.senderPort))
+                    return new Response(true);
                 identity = overlay.getLeftNode(((GetLeftNodeRequest) request).level);
                 return new IdentityResponse(identity);
             case FindLadder:
+                // Can only be invoked when unlocked or by the lock owner.
+                if(overlay.isLocked() && !overlay.isLockedBy(request.senderAddress, request.senderPort))
+                    return new Response(true);
                 identity = overlay.findLadder(((FindLadderRequest) request).level, ((FindLadderRequest) request).direction,
                         ((FindLadderRequest) request).target);
                 return new IdentityResponse(identity);

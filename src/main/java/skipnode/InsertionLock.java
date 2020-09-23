@@ -38,8 +38,8 @@ public class InsertionLock {
         return locked.availablePermits() == 0;
     }
 
-    public boolean isLockedBy(SkipNodeIdentity owner) {
-        return isLocked() && owner == this.owner;
+    public boolean isLockedBy(String address, int port) {
+        return isLocked() && owner.getAddress().equals(address) && owner.getPort() == port;
     }
 
     public boolean unlockOwned(SkipNodeIdentity owner) {
