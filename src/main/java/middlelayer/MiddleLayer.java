@@ -76,22 +76,28 @@ public class MiddleLayer {
         // If the overlay is locked, return a response denoting the client to try again later.
         switch (request.type) {
             case SearchByNameID:
-                if(overlay.isLocked()) return new Response(true);
+                // Check whether the node is available for lookups (i.e., already inserted.)
+                if(!overlay.isAvailable()) return new Response(true);
                 result = overlay.searchByNameID(((SearchByNameIDRequest) request).targetNameID);
                 return new SearchResultResponse(result);
             case SearchByNameIDRecursive:
-                if(overlay.isLocked()) return new Response(true);
+                // Check whether the node is available for lookups (i.e., already inserted.)
+                if(!overlay.isAvailable()) return new Response(true);
                 result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
                         ((SearchByNameIDRecursiveRequest) request).right,
                         ((SearchByNameIDRecursiveRequest) request).target,
                         ((SearchByNameIDRecursiveRequest) request).level);
                 return new SearchResultResponse(result);
             case SearchByNumID:
-                if(overlay.isLocked()) return new Response(true);
+                // Check whether the node is available for lookups (i.e., already inserted.)
+                if(!overlay.isAvailable()) return new Response(true);
                 identity = overlay.searchByNumID(((SearchByNumIDRequest) request).targetNumID);
                 return new IdentityResponse(identity);
+            case GetIdentity:
+                identity = overlay.getIdentity();
+                return new IdentityResponse(identity);
             case AcquireLock:
-                return new BooleanResponse(overlay.timerLocked(((AcquireLockRequest) request).requester));
+                return new BooleanResponse(overlay.tryAcquire(((AcquireLockRequest) request).requester, ((AcquireLockRequest) request).version));
             case ReleaseLock:
                 return new BooleanResponse(overlay.unlock(((ReleaseLockRequest) request).owner));
             case UpdateLeftNode:
@@ -162,8 +168,8 @@ public class MiddleLayer {
         return ((IdentityResponse) response).identity;
     }
 
-    public boolean timerLocked(String destinationAddress, int port, SkipNodeIdentity req) {
-        Response response = this.send(destinationAddress, port, new AcquireLockRequest(req));
+    public boolean tryAcquire(String destinationAddress, int port, SkipNodeIdentity req, int version) {
+        Response response = this.send(destinationAddress, port, new AcquireLockRequest(req, version));
         return ((BooleanResponse) response).answer;
     }
 
@@ -183,6 +189,11 @@ public class MiddleLayer {
         // Send the request through the underlay
         Response response = this.send(destinationAddress, port, new UpdateLeftNodeRequest(level, snId));
         return ((IdentityResponse) response).identity;
+    }
+
+    public SkipNodeIdentity getIdentity(String destinationAddress, int port) {
+        Response r = send(destinationAddress, port, new GetIdentityRequest());
+        return ((IdentityResponse) r).identity;
     }
 
     public SkipNodeIdentity getLeftNode(String destinationAddress, int port, int level) {

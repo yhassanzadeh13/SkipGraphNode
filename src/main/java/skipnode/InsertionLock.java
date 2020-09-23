@@ -17,21 +17,14 @@ public class InsertionLock {
         return acquired;
     }
 
-    public boolean endInsertion() {
+    public void endInsertion() {
         if(owner == null) locked.release();
-        return owner == null;
     }
 
-    public boolean timerLocked(SkipNodeIdentity receiver) {
-        try {
-            boolean acquired = locked.tryAcquire(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if(acquired) owner = receiver;
-            return acquired;
-        } catch (InterruptedException e) {
-            System.err.println("[InsertionLock.timerLocked] Interrupted.");
-            e.printStackTrace();
-        }
-        return false;
+    public boolean tryAcquire(SkipNodeIdentity receiver) {
+        boolean acquired = locked.tryAcquire();
+        if(acquired) owner = receiver;
+        return acquired;
     }
 
     public boolean isLocked() {
@@ -43,7 +36,7 @@ public class InsertionLock {
     }
 
     public boolean unlockOwned(SkipNodeIdentity owner) {
-        if(this.owner != owner) return false;
+        if(!this.owner.equals(owner)) return false;
         locked.release();
         return true;
     }

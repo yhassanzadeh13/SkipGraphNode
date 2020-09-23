@@ -89,6 +89,12 @@ public interface SkipNodeInterface {
     SkipNodeIdentity updateRightNode(SkipNodeIdentity snId, int level);
 
     /**
+     * Returns the up-to-date identity of this node.
+     * @return the up-to-date identity of this node.
+     */
+    SkipNodeIdentity getIdentity();
+
+    /**
      * Returns the right neighbor of the node at the given level.
      * @param level the level of the right neighbor.
      * @return the right neighbor at the given level.
@@ -114,7 +120,7 @@ public interface SkipNodeInterface {
      * @param requester
      * @return
      */
-    boolean timerLocked(SkipNodeIdentity requester);
+    boolean tryAcquire(SkipNodeIdentity requester, int version);
 
     /**
      *

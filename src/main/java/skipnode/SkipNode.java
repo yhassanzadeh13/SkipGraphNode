@@ -1,17 +1,11 @@
 package skipnode;
 
-import lookup.ConcurrentBackupTable;
 import lookup.LookupTable;
-import lookup.TentativeTable;
 import middlelayer.MiddleLayer;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 public class SkipNode implements SkipNodeInterface {
     /**
@@ -28,6 +22,8 @@ public class SkipNode implements SkipNodeInterface {
     private boolean inserted = false;
     private final InsertionLock insertionLock = new InsertionLock();
     private final LinkedBlockingDeque<SkipNodeIdentity> ownedLocks = new LinkedBlockingDeque<>();
+    // Incremented after each lookup table update.
+    private int version = 0;
 
     // The identity to be returned in case the node is currently unreachable (i.e., being inserted.)
     private static final SkipNodeIdentity unavailableIdentity = LookupTable.EMPTY_NODE;
@@ -53,7 +49,7 @@ public class SkipNode implements SkipNodeInterface {
     }
 
     public SkipNodeIdentity getIdentity() {
-        return new SkipNodeIdentity(nameID, numID, address, port);
+        return new SkipNodeIdentity(nameID, numID, address, port, version);
     }
 
     @Override
@@ -80,20 +76,22 @@ public class SkipNode implements SkipNodeInterface {
             System.err.println("[SkipNode.insert] Already being inserted!");
             return;
         }
-        // Find my 0-level neighbor by making a num-id search through the introducer.
-        SkipNodeIdentity searchResult = middleLayer.searchByNumID(introducerAddress, introducerPort, numID);
-        // Get my 0-level left and right neighbors.
-        SkipNodeIdentity left = null;
-        SkipNodeIdentity right = null;
-        if(getNumID() < searchResult.getNumID()) {
-            right = searchResult;
-            left = middleLayer.getLeftNode(right.getAddress(), right.getPort(), 0);
-        } else {
-            left = searchResult;
-            right = middleLayer.getRightNode(left.getAddress(), left.getPort(), 0);
-        }
-        // Now, try to acquire the locks from all of my neighbors.
-        while(!acquireNeighborLocks(left, right)) {
+        // Try to acquire the locks from all of my neighbors.
+        while(true) {
+            SkipNodeIdentity left = null;
+            SkipNodeIdentity right = null;
+            // First, find my 0-level neighbor by making a num-id search through the introducer.
+            SkipNodeIdentity searchResult = middleLayer.searchByNumID(introducerAddress, introducerPort, numID);
+            // Get my 0-level left and right neighbors.
+            if(getNumID() < searchResult.getNumID()) {
+                right = searchResult;
+                left = middleLayer.getLeftNode(right.getAddress(), right.getPort(), 0);
+            } else {
+                left = searchResult;
+                right = middleLayer.getRightNode(left.getAddress(), left.getPort(), 0);
+            }
+            System.out.println(getNumID() + " found its 0-level neighbors: " + left.getNumID() + ", " + right.getNumID());
+            if(acquireNeighborLocks(left, right)) break;
             // When we fail, backoff for a random interval before trying again.
             System.out.println(getNumID() + " could not acquire the locks. Backing off...");
             int sleepTime = (int)(Math.random() * 2000);
@@ -104,7 +102,9 @@ public class SkipNode implements SkipNodeInterface {
                 e.printStackTrace();
             }
         }
-        System.out.println(getNumID() + " has acquired all the locks.");
+        System.out.print(getNumID() + " has acquired all the locks: ");
+        ownedLocks.forEach(n -> System.out.print(n.getNumID() + ", "));
+        System.out.println();
         // At this point, we should have acquired all of our neighbors. Now, it is time to add them.
         for(SkipNodeIdentity n : ownedLocks) {
             // Insert the neighbor into my own table.
@@ -144,7 +144,7 @@ public class SkipNode implements SkipNodeInterface {
         for(int level = 0; level <= lookupTable.getNumLevels(); level++) {
             if(newLeftNeighbor && !leftNeighbor.equals(LookupTable.EMPTY_NODE)) {
                 // Try to acquire the lock for the left neighbor.
-                boolean acquired = middleLayer.timerLocked(left.getAddress(), left.getPort(), getIdentity());
+                boolean acquired = middleLayer.tryAcquire(left.getAddress(), left.getPort(), getIdentity(), left.version);
                 if(!acquired) {
                     allAcquired = false;
                     break;
@@ -154,7 +154,7 @@ public class SkipNode implements SkipNodeInterface {
             }
             if(newRightNeighbor && !rightNeighbor.equals(LookupTable.EMPTY_NODE)) {
                 // Try to acquire the lock for the right neighbor.
-                boolean acquired = middleLayer.timerLocked(right.getAddress(), right.getPort(), getIdentity());
+                boolean acquired = middleLayer.tryAcquire(right.getAddress(), right.getPort(), getIdentity(), right.version);
                 if(!acquired) {
                     allAcquired = false;
                     break;
@@ -186,12 +186,12 @@ public class SkipNode implements SkipNodeInterface {
     }
 
     @Override
-    public boolean timerLocked(SkipNodeIdentity requester) {
-        if(!insertionLock.timerLocked(requester)) {
-            System.err.println("[SkipNode.timerLocked] Could not receive the lock.");
+    public boolean tryAcquire(SkipNodeIdentity requester, int version) {
+        // Before trying to acquire the lock, make sure that the versions match.
+        if(version != this.version || !insertionLock.tryAcquire(requester)) {
             return false;
         }
-        System.out.println(getNumID() + " locked for " + requester.getNumID());
+        System.out.println(getNumID() + " (" + this.version + ") is being locked by " + requester.getNumID() + " with provided version " + version);
         return true;
     }
 
@@ -259,6 +259,8 @@ public class SkipNode implements SkipNodeInterface {
      * @param node the node to insert.
      */
     private void insertIntoTable(SkipNodeIdentity node) {
+        System.out.println(getNumID() + " has updated its table.");
+        version++;
         int direction = (node.getNumID() < getNumID()) ? 0 : 1;
         int maxLevel = SkipNodeIdentity.commonBits(getNameID(), node.getNameID());
         for(int i = 0; i <= maxLevel; i++) {
@@ -430,12 +432,16 @@ public class SkipNode implements SkipNodeInterface {
 
     @Override
     public SkipNodeIdentity getRightNode(int level) {
-        return lookupTable.getRight(level);
+        SkipNodeIdentity right = lookupTable.getRight(level);
+        return (right.equals(LookupTable.EMPTY_NODE)) ? right
+                : middleLayer.getIdentity(right.getAddress(), right.getPort());
     }
 
     @Override
     public SkipNodeIdentity getLeftNode(int level) {
-        return lookupTable.getLeft(level);
+        SkipNodeIdentity left = lookupTable.getLeft(level);
+        return (left.equals(LookupTable.EMPTY_NODE)) ? left
+                : middleLayer.getIdentity(left.getAddress(), left.getPort());
     }
 
     /*

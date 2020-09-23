@@ -93,6 +93,6 @@ public abstract class Underlay {
      */
     public static Underlay newDefaultUnderlay() {
         // By default, we use Java RMI Underlay.
-        return new JavaRMIUnderlay();
+        return new TCPUnderlay();
     }
 }

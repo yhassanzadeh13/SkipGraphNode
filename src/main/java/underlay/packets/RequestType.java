@@ -21,5 +21,6 @@ public enum RequestType {
     Injection,
     GetRightLadder,
     AcquireLock,
-    ReleaseLock
+    ReleaseLock,
+    GetIdentity
 }
