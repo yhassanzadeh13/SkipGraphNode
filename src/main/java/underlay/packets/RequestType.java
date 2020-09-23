@@ -19,5 +19,7 @@ public enum RequestType {
     GetLeftLadder,
     Increment,
     Injection,
-    GetRightLadder
+    GetRightLadder,
+    AcquireLock,
+    ReleaseLock
 }

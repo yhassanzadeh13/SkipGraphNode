@@ -8,10 +8,8 @@ import java.util.List;
  */
 public class SearchResult implements Serializable {
     public final SkipNodeIdentity result;
-    public final List<SkipNodeIdentity> path;
 
-    public SearchResult(SkipNodeIdentity result, List<SkipNodeIdentity> path) {
+    public SearchResult(SkipNodeIdentity result) {
         this.result = result;
-        this.path = path;
     }
 }

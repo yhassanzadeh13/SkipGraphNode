@@ -56,17 +56,15 @@ public class MiddleLayer {
                 result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
                         ((SearchByNameIDRecursiveRequest) request).right,
                         ((SearchByNameIDRecursiveRequest) request).target,
-                        ((SearchByNameIDRecursiveRequest) request).level,
-                        ((SearchByNameIDRecursiveRequest) request).path);
+                        ((SearchByNameIDRecursiveRequest) request).level);
                 return new SearchResultResponse(result);
             case SearchByNumID:
                 identity = overlay.searchByNumID(((SearchByNumIDRequest) request).targetNumID);
                 return new IdentityResponse(identity);
-            case NameIDLevelSearch:
-                identity = overlay.nameIDLevelSearch(((NameIDLevelSearchRequest) request).level,
-                        ((NameIDLevelSearchRequest) request).direction,
-                        ((NameIDLevelSearchRequest) request).targetNameID);
-                return new IdentityResponse(identity);
+            case AcquireLock:
+                return new BooleanResponse(overlay.timerLocked(((AcquireLockRequest) request).requester));
+            case ReleaseLock:
+                return new BooleanResponse(overlay.unlock(((ReleaseLockRequest) request).owner));
             case UpdateLeftNode:
                 identity = overlay.updateLeftNode(((UpdateLeftNodeRequest) request).snId, ((UpdateLeftNodeRequest) request).level);
                 return new IdentityResponse(identity);
@@ -79,10 +77,6 @@ public class MiddleLayer {
             case GetLeftNode:
                 identity = overlay.getLeftNode(((GetLeftNodeRequest) request).level);
                 return new IdentityResponse(identity);
-            case AcquireNeighbors:
-                TentativeTable neighbors = overlay.acquireNeighbors(((AcquireNeighborsRequest) request).newNode,
-                        ((AcquireNeighborsRequest) request).level);
-                return new TableResponse(neighbors);
             case FindLadder:
                 identity = overlay.findLadder(((FindLadderRequest) request).level, ((FindLadderRequest) request).direction,
                         ((FindLadderRequest) request).target);
@@ -92,17 +86,6 @@ public class MiddleLayer {
                 return new AckResponse();
             case IsAvailable:
                 return new BooleanResponse(overlay.isAvailable());
-            case GetLeftLadder:
-                identity = overlay.getLeftLadder(((GetLeftLadderRequest)request).level, ((GetLeftLadderRequest)request).nameID);
-                return new IdentityResponse(identity);
-            case GetRightLadder:
-                identity = overlay.getRightLadder(((GetRightLadderRequest)request).level, ((GetRightLadderRequest)request).nameID);
-                return new IdentityResponse(identity);
-            case Increment:
-                identity = overlay.increment(((IncrementRequest)request).snId,((IncrementRequest)request).level);
-                return new IdentityResponse(identity);
-            case Injection:
-                return new BooleanResponse(overlay.inject(((InjectionRequest)request).snIds));
             default:
                 return null;
         }
@@ -123,10 +106,9 @@ public class MiddleLayer {
     }
 
     public SearchResult searchByNameIDRecursive(String destinationAddress, int port, SkipNodeIdentity left,
-                                                    SkipNodeIdentity right, String target, int level,
-                                                    List<SkipNodeIdentity> path) {
+                                                    SkipNodeIdentity right, String target, int level) {
         // Send the request through the underlay.
-        Response response = this.send(destinationAddress, port, new SearchByNameIDRecursiveRequest(left, right, target, level, path));
+        Response response = this.send(destinationAddress, port, new SearchByNameIDRecursiveRequest(left, right, target, level));
         return ((SearchResultResponse) response).result;
     }
 
@@ -136,10 +118,14 @@ public class MiddleLayer {
         return ((IdentityResponse) response).identity;
     }
 
-    public SkipNodeIdentity nameIDLevelSearch(String destinationAddress, int port, int level, int direction, String nameID) {
-        // Send the request through the underlay
-        Response response = this.send(destinationAddress, port, new NameIDLevelSearchRequest(level, direction, nameID));
-        return ((IdentityResponse) response).identity;
+    public boolean timerLocked(String destinationAddress, int port, SkipNodeIdentity req) {
+        Response response = this.send(destinationAddress, port, new AcquireLockRequest(req));
+        return ((BooleanResponse) response).answer;
+    }
+
+    public boolean unlock(String destinationAddress, int port, SkipNodeIdentity owner) {
+        Response response = this.send(destinationAddress, port, new ReleaseLockRequest(owner));
+        return ((BooleanResponse) response).answer;
     }
 
     public SkipNodeIdentity updateRightNode(String destinationAddress, int port, SkipNodeIdentity snId, int level) {

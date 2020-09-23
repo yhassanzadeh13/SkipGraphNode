@@ -21,7 +21,7 @@ public class ConcurrentLookupTable implements LookupTable {
      */
     private ArrayList<SkipNodeIdentity> nodes;
 
-    private enum direction{
+    private enum direction {
         LEFT,
         RIGHT
     }
