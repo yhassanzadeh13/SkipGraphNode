@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
-    static int NODES = 16;
+    static int NODES = 8;
 
     // In this test I call the increment a lot of times through different threads
     // This tests whether all messages are in face received or not
@@ -103,7 +103,8 @@ class SkipNodeTest {
         // Construct the threads.
         Thread[] insertionThreads = new Thread[NODES-1];
         for(int i = 1; i <= insertionThreads.length; i++) {
-            final SkipNode introducer = g.getNodes().get((int) (Math.random() * (i-1)));
+            // Choose the previous node as the introducer.
+            final SkipNode introducer = g.getNodes().get(i-1);
             final SkipNode node = g.getNodes().get(i);
             insertionThreads[i-1] = new Thread(() -> {
                 node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
@@ -167,14 +168,6 @@ class SkipNodeTest {
             System.err.println("Could not join the thread.");
             e.printStackTrace();
         }
-        // Perform searches and check their correctness.
-        for(int i = 0; i < searchThreads.length; i++) {
-            // Choose two random nodes.
-            final SkipNode initiator = g.getNodes().get((int)(Math.random() * NODES));
-            final SkipNode target = g.getNodes().get((int)(Math.random() * NODES));
-            SearchResult res = initiator.searchByNameID(target.getNameID());
-            Assertions.assertEquals(target.getNameID(), res.result.getNameID());
-        }
         // Create a map of num ids to their corresponding lookup tables.
         Map<Integer, LookupTable> tableMap = g.getNodes().stream()
                 .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
@@ -208,8 +201,8 @@ class SkipNodeTest {
         Thread[] threads = new Thread[NODES-1];
         // Construct the threads.
         for(int i = 1; i <= threads.length; i++) {
-            // Choose a random introducer.
-            final SkipNode introducer = g.getNodes().get((int) (Math.random() * i));
+            // Choose an already inserted introducer.
+            final SkipNode introducer = g.getNodes().get((int)i-1);
             final SkipNode node = g.getNodes().get(i);
             threads[i-1] = new Thread(() -> {
                 node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());

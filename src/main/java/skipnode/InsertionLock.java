@@ -6,8 +6,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InsertionLock {
 
-    private final int TIMEOUT_SECONDS = 5;
-
     private final Semaphore locked = new Semaphore(1, true);
     private SkipNodeIdentity owner = null;
 
@@ -32,7 +30,7 @@ public class InsertionLock {
     }
 
     public boolean isLockedBy(String address, int port) {
-        return isLocked() && owner.getAddress().equals(address) && owner.getPort() == port;
+        return isLocked() && owner != null && owner.getAddress().equals(address) && owner.getPort() == port;
     }
 
     public boolean unlockOwned(SkipNodeIdentity owner) {

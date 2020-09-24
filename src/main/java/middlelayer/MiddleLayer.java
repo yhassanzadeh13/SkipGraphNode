@@ -45,8 +45,8 @@ public class MiddleLayer {
             if(trial > 1) {
                 int sleepTime = (int) (Math.random() * 2000);
                 try {
-                    System.out.println("[MiddleLayer.send] Backing off for " + sleepTime + " ms while sending " + request
-                            + " from " + underlay.getFullAddress() + " to " + destinationAddress + ":" + port + ".");
+//                    System.out.println("[MiddleLayer.send] Backing off " + trial + " for " + sleepTime + " ms while sending " + request
+//                            + " from " + overlay.getIdentity().getNumID() + " to " + destinationAddress + ":" + port + ".");
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
                     System.err.println("[MiddleLayer.send] Could not back off.");

@@ -34,6 +34,7 @@ public class SkipNode implements SkipNodeInterface {
         this.numID = snID.getNumID();
         this.nameID = snID.getNameID();
         this.lookupTable = lookupTable;
+        insertionLock.startInsertion();
     }
 
     public int getNumID() {
@@ -70,16 +71,14 @@ public class SkipNode implements SkipNodeInterface {
         if(introducerAddress == null) {
             System.out.println(getNumID() + " was inserted!");
             inserted = true;
-            return;
-        }
-        if(!insertionLock.startInsertion()) {
-            System.err.println("[SkipNode.insert] Already being inserted!");
+            insertionLock.endInsertion();
             return;
         }
         // Try to acquire the locks from all of my neighbors.
         while(true) {
             SkipNodeIdentity left = null;
             SkipNodeIdentity right = null;
+            System.out.println(getNumID() + " searches for its 0-level neighbors...");
             // First, find my 0-level neighbor by making a num-id search through the introducer.
             SkipNodeIdentity searchResult = middleLayer.searchByNumID(introducerAddress, introducerPort, numID);
             // Get my 0-level left and right neighbors.
@@ -141,10 +140,15 @@ public class SkipNode implements SkipNodeInterface {
         boolean newLeftNeighbor = true;
         boolean newRightNeighbor = true;
         // Climb up the levels and acquire the left and right neighbor locks.
-        for(int level = 0; level <= lookupTable.getNumLevels(); level++) {
+        for(int level = 0; level < lookupTable.getNumLevels(); level++) {
+            if(leftNeighbor.equals(LookupTable.EMPTY_NODE) && rightNeighbor.equals(LookupTable.EMPTY_NODE)) {
+                break;
+            }
             if(newLeftNeighbor && !leftNeighbor.equals(LookupTable.EMPTY_NODE)) {
                 // Try to acquire the lock for the left neighbor.
-                boolean acquired = middleLayer.tryAcquire(left.getAddress(), left.getPort(), getIdentity(), left.version);
+                System.out.println(getNumID() + " is trying to acquire a lock from " + leftNeighbor.getNumID());
+                boolean acquired = middleLayer.tryAcquire(leftNeighbor.getAddress(), leftNeighbor.getPort(),
+                        getIdentity(), leftNeighbor.version);
                 if(!acquired) {
                     allAcquired = false;
                     break;
@@ -153,8 +157,10 @@ public class SkipNode implements SkipNodeInterface {
                 ownedLocks.add(leftNeighbor);
             }
             if(newRightNeighbor && !rightNeighbor.equals(LookupTable.EMPTY_NODE)) {
+                System.out.println(getNumID() + " is trying to acquire a lock from " + rightNeighbor.getNumID());
                 // Try to acquire the lock for the right neighbor.
-                boolean acquired = middleLayer.tryAcquire(right.getAddress(), right.getPort(), getIdentity(), right.version);
+                boolean acquired = middleLayer.tryAcquire(rightNeighbor.getAddress(), rightNeighbor.getPort(),
+                        getIdentity(), rightNeighbor.version);
                 if(!acquired) {
                     allAcquired = false;
                     break;
@@ -187,8 +193,14 @@ public class SkipNode implements SkipNodeInterface {
 
     @Override
     public boolean tryAcquire(SkipNodeIdentity requester, int version) {
-        // Before trying to acquire the lock, make sure that the versions match.
-        if(version != this.version || !insertionLock.tryAcquire(requester)) {
+        // Naively try to acquire the lock.
+        if(!insertionLock.tryAcquire(requester)) {
+            return false;
+        }
+        // After acquiring the lock, make sure that the versions match.
+        if(version != this.version) {
+            // Otherwise, immediately release and return false.
+            insertionLock.unlockOwned(requester);
             return false;
         }
         System.out.println(getNumID() + " (" + this.version + ") is being locked by " + requester.getNumID() + " with provided version " + version);
@@ -216,33 +228,18 @@ public class SkipNode implements SkipNodeInterface {
      * @return the `ladder` node information.
      */
     public SkipNodeIdentity findLadder(int level, int direction, String target) {
+        if(level >= lookupTable.getNumLevels() || level < 0) return LookupTable.EMPTY_NODE;
         // If the current node and the inserted node have common bits more than the current level,
         // then this node is the neighbor so we return it
         if(SkipNodeIdentity.commonBits(target, getNameID()) > level) {
             return getIdentity();
         }
-        // Response from the neighbor.
-        SkipNodeIdentity neighborResponse;
-        // If the search is to the right...
-        if(direction == 1) {
-            // And if the right neighbor does not exist then at this level the right neighbor of the inserted node is null.
-            if(lookupTable.getRight(level).equals(LookupTable.EMPTY_NODE)) {
-                return LookupTable.EMPTY_NODE;
-            }
-            // Otherwise, delegate the search to right neighbor.
-            SkipNodeIdentity rightNeighbor = lookupTable.getRight(level);
-            neighborResponse = middleLayer.findLadder(rightNeighbor.getAddress(), rightNeighbor.getPort(), level, 1, target);
-        } else {
-            // If the search is to the left and if the left neighbor is null, then the left neighbor of the inserted
-            // node at this level is null.
-            if(lookupTable.getLeft(level).equals(LookupTable.EMPTY_NODE)) {
-                return LookupTable.EMPTY_NODE;
-            }
-            // Otherwise, delegate the search to the left neighbor.
-            SkipNodeIdentity leftNeighbor = lookupTable.getLeft(level);
-            neighborResponse = middleLayer.findLadder(leftNeighbor.getAddress(), leftNeighbor.getPort(), level, 0, target);
+        SkipNodeIdentity curr = (direction == 0) ? lookupTable.getLeft(level) : lookupTable.getRight(level);
+        while(!curr.equals(LookupTable.EMPTY_NODE) && SkipNodeIdentity.commonBits(target, curr.getNameID()) <= level) {
+            curr = (direction == 0) ? middleLayer.getLeftNode(curr.getAddress(), curr.getPort(), level)
+                    : middleLayer.getRightNode(curr.getAddress(), curr.getPort(), level);
         }
-        return neighborResponse;
+        return curr;
     }
 
     /**
