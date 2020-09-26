@@ -1,4 +1,5 @@
 package middlelayer;
+import lookup.LookupTable;
 import lookup.TentativeTable;
 import skipnode.SearchResult;
 import skipnode.SkipNodeIdentity;
@@ -37,7 +38,7 @@ public class MiddleLayer {
         // Fill out the request's sender information to be used by the remote middle layer.
         request.senderAddress = underlay.getAddress();
         request.senderPort = underlay.getPort();
-        Response r = null;
+        Response response = null;
         int trial = 0;
         do {
             trial++;
@@ -56,14 +57,14 @@ public class MiddleLayer {
             // Check if the destination address == address of this node.
             if (destinationAddress.equals(underlay.getAddress()) && port == underlay.getPort()) {
                 // Bounce the request up.
-                r = receive(request);
+                response = receive(request);
             } else {
                 // Or receive it from the remote client.
-                r = underlay.sendMessage(destinationAddress, port, request);
+                response = underlay.sendMessage(destinationAddress, port, request);
             }
-        } while(r.locked);
+        } while(request.backoff && response.locked);
 
-        return r;
+        return response;
     }
 
     /**
@@ -197,14 +198,32 @@ public class MiddleLayer {
     }
 
     public SkipNodeIdentity getLeftNode(String destinationAddress, int port, int level) {
-        // Send the request through the underlay
-        Response r = send(destinationAddress, port, new GetLeftNodeRequest(level));
-        return ((IdentityResponse) r).identity;
+        return getLeftNode(true, destinationAddress, port, level);
     }
 
     public SkipNodeIdentity getRightNode(String destinationAddress, int port, int level) {
+        return getRightNode(true, destinationAddress, port, level);
+    }
+
+    public SkipNodeIdentity getLeftNode(boolean backoff, String destinationAddress, int port, int level) {
         // Send the request through the underlay
-        Response r = send(destinationAddress, port, new GetRightNodeRequest(level));
+        GetLeftNodeRequest req = new GetLeftNodeRequest(level);
+        req.backoff = backoff;
+        Response r = send(destinationAddress, port, req);
+        // If the client has returned a locked response (i.e., has indicated that we should try again), return
+        // an invalid skip node identity.
+        if(r.locked) return LookupTable.INVALID_NODE;
+        return ((IdentityResponse) r).identity;
+    }
+
+    public SkipNodeIdentity getRightNode(boolean backoff, String destinationAddress, int port, int level) {
+        // Send the request through the underlay
+        GetRightNodeRequest req = new GetRightNodeRequest(level);
+        req.backoff = backoff;
+        Response r = send(destinationAddress, port, req);
+        // If the client has returned a locked response (i.e., has indicated that we should try again), return
+        // an invalid skip node identity.
+        if(r.locked) return LookupTable.INVALID_NODE;
         return ((IdentityResponse) r).identity;
     }
 

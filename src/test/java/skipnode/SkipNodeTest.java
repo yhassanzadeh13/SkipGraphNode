@@ -11,6 +11,7 @@ import underlay.Underlay;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 /**
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
-    static int NODES = 8;
+    static int NODES = 128;
 
     // In this test I call the increment a lot of times through different threads
     // This tests whether all messages are in face received or not
@@ -202,7 +203,7 @@ class SkipNodeTest {
         // Construct the threads.
         for(int i = 1; i <= threads.length; i++) {
             // Choose an already inserted introducer.
-            final SkipNode introducer = g.getNodes().get((int)i-1);
+            final SkipNode introducer = g.getNodes().get((int)(Math.random() * i));
             final SkipNode node = g.getNodes().get(i);
             threads[i-1] = new Thread(() -> {
                 node.insert(introducer.getIdentity().getAddress(), introducer.getIdentity().getPort());
@@ -270,7 +271,7 @@ class SkipNodeTest {
             underlays.add(underlay);
         }
         // Then, construct the local skip graph.
-        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES*4, false);
+        LocalSkipGraph g = new LocalSkipGraph(NODES, underlays.get(0).getAddress(), STARTING_PORT+ NODES*4, true);
         // Create the middle layers.
         for(int i = 0; i < NODES; i++) {
             MiddleLayer middleLayer = new MiddleLayer(underlays.get(i), g.getNodes().get(i));
@@ -278,8 +279,6 @@ class SkipNodeTest {
             underlays.get(i).setMiddleLayer(middleLayer);
             g.getNodes().get(i).setMiddleLayer(middleLayer);
         }
-        // Insert all the nodes in a randomized fashion.
-        g.insertAllRandomized();
         // We will now perform name ID searches for every node from each node in the skip graph.
         for(int i = 0; i < NODES; i++) {
             SkipNode initiator = g.getNodes().get(i);

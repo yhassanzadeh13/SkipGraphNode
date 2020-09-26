@@ -10,6 +10,10 @@ public class Request implements Serializable {
     public final RequestType type;
     public String senderAddress;
     public int senderPort;
+    // Denotes whether the middle layer should keep trying to deliver the request to a locked overlay
+    // at the client. If this is set to false, the overlay needs to check whether the response is a
+    // `locked` response and act accordingly.
+    public boolean backoff = true;
 
     public Request(RequestType type) {
         this.type = type;
