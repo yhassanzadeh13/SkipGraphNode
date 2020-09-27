@@ -21,7 +21,7 @@ public class SkipNode implements SkipNodeInterface {
 
     private boolean inserted = false;
     private final InsertionLock insertionLock = new InsertionLock();
-    private final LinkedBlockingDeque<SkipNodeIdentity> ownedLocks = new LinkedBlockingDeque<>();
+    private final LinkedBlockingDeque<InsertionLock.NeighborInstance> ownedLocks = new LinkedBlockingDeque<>();
     // Incremented after each lookup table update.
     private int version = 0;
 
@@ -102,21 +102,21 @@ public class SkipNode implements SkipNodeInterface {
             }
         }
         System.out.print(getNumID() + " has acquired all the locks: ");
-        ownedLocks.forEach(n -> System.out.print(n.getNumID() + ", "));
+        ownedLocks.forEach(n -> System.out.print(n.node.getNumID() + ", "));
         System.out.println();
         // At this point, we should have acquired all of our neighbors. Now, it is time to add them.
-        for(SkipNodeIdentity n : ownedLocks) {
+        for(InsertionLock.NeighborInstance n : ownedLocks) {
             // Insert the neighbor into my own table.
-            insertIntoTable(n);
+            insertIntoTable(n.node, n.minLevel);
             // Let the neighbor insert me in its table.
-            middleLayer.announceNeighbor(n.getAddress(), n.getPort(), getIdentity());
+            middleLayer.announceNeighbor(n.node.getAddress(), n.node.getPort(), getIdentity(), n.minLevel);
         }
         // Now, we release all of the locks.
-        List<SkipNodeIdentity> toRelease = new ArrayList<>();
+        List<InsertionLock.NeighborInstance> toRelease = new ArrayList<>();
         ownedLocks.drainTo(toRelease);
         // Release the locks.
         toRelease.forEach(n -> {
-            middleLayer.unlock(n.getAddress(), n.getPort(), getIdentity());
+            middleLayer.unlock(n.node.getAddress(), n.node.getPort(), getIdentity());
         });
         // Complete the insertion.
         inserted = true;
@@ -154,7 +154,7 @@ public class SkipNode implements SkipNodeInterface {
                     break;
                 }
                 // Add the new lock to our list of locks.
-                ownedLocks.add(leftNeighbor);
+                ownedLocks.add(new InsertionLock.NeighborInstance(leftNeighbor, level));
             }
             if(newRightNeighbor && !rightNeighbor.equals(LookupTable.EMPTY_NODE)) {
                 System.out.println(getNumID() + " is trying to acquire a lock from " + rightNeighbor.getNumID());
@@ -166,7 +166,7 @@ public class SkipNode implements SkipNodeInterface {
                     break;
                 }
                 // Add the new lock to our list of locks.
-                ownedLocks.add(rightNeighbor);
+                ownedLocks.add(new InsertionLock.NeighborInstance(rightNeighbor, level));
             }
             System.out.println(getNumID() + " is climbing up.");
             // Acquire the ladders (i.e., the neighbors at the upper level) and check if they are new neighbors
@@ -192,11 +192,11 @@ public class SkipNode implements SkipNodeInterface {
         System.out.println(getNumID() + " completed proposal phase.");
         // If we were not able to acquire all the locks, then release the locks that were acquired.
         if(!allAcquired) {
-            List<SkipNodeIdentity> toRelease = new ArrayList<>();
+            List<InsertionLock.NeighborInstance> toRelease = new ArrayList<>();
             ownedLocks.drainTo(toRelease);
             // Release the locks.
             toRelease.forEach(n -> {
-                middleLayer.unlock(n.getAddress(), n.getPort(), getIdentity());
+                middleLayer.unlock(n.node.getAddress(), n.node.getPort(), getIdentity());
             });
         }
         return allAcquired;
@@ -206,6 +206,8 @@ public class SkipNode implements SkipNodeInterface {
     public boolean tryAcquire(SkipNodeIdentity requester, int version) {
         // Naively try to acquire the lock.
         if(!insertionLock.tryAcquire(requester)) {
+            System.out.println(getNumID() + " did not hand over the lock to " + requester.getNumID()
+                    + " because it is already given to " + insertionLock.owner.getNumID());
             return false;
         }
         // After acquiring the lock, make sure that the versions match.
@@ -253,6 +255,7 @@ public class SkipNode implements SkipNodeInterface {
         SkipNodeIdentity curr = (direction == 0) ? lookupTable.getLeft(level) : lookupTable.getRight(level);
         while(!curr.equals(LookupTable.EMPTY_NODE) && SkipNodeIdentity.commonBits(target, curr.getNameID()) <= level) {
             System.out.println(getNumID() + " is in findLadder loop at level " + level + " with " + curr.getNumID());
+            SkipNodeIdentity potentialLadder = (direction == 0) ? lookupTable.getLeft(level) : lookupTable.getRight(level);
             // Try to find a new neighbor, but immediately return if the neighbor is locked.
             curr = (direction == 0) ? middleLayer.getLeftNode(false, curr.getAddress(), curr.getPort(), level)
                     : middleLayer.getRightNode(false, curr.getAddress(), curr.getPort(), level);
@@ -269,20 +272,20 @@ public class SkipNode implements SkipNodeInterface {
      * @param newNeighbor the identity of the new neighbor.
      */
     @Override
-    public void announceNeighbor(SkipNodeIdentity newNeighbor) {
-        insertIntoTable(newNeighbor);
+    public void announceNeighbor(SkipNodeIdentity newNeighbor, int minLevel) {
+        insertIntoTable(newNeighbor, minLevel);
     }
 
     /**
      * Puts the given node into every appropriate level & direction according to its name ID and numerical ID.
      * @param node the node to insert.
      */
-    private void insertIntoTable(SkipNodeIdentity node) {
+    private void insertIntoTable(SkipNodeIdentity node, int minLevel) {
         System.out.println(getNumID() + " has updated its table.");
         version++;
         int direction = (node.getNumID() < getNumID()) ? 0 : 1;
         int maxLevel = SkipNodeIdentity.commonBits(getNameID(), node.getNameID());
-        for(int i = 0; i <= maxLevel; i++) {
+        for(int i = minLevel; i <= maxLevel; i++) {
             if(direction == 0) updateLeftNode(node, i);
             else updateRightNode(node, i);
         }

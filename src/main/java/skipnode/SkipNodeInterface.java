@@ -35,8 +35,9 @@ public interface SkipNodeInterface {
      * Adds the given neighbor to the appropriate lookup table entries of this node. Should only be used during concurrent
      * insertion (i.e., ConcurrentBackupTable is being used.)
      * @param newNeighbor the identity of the new neighbor.
+     * @param minLevel the minimum level in which the new neighbor should be connected.
      */
-    void announceNeighbor(SkipNodeIdentity newNeighbor);
+    void announceNeighbor(SkipNodeIdentity newNeighbor, int minLevel);
 
     /**
      * Remove the node from the SkipGraph. Joins the neighbors on each level together

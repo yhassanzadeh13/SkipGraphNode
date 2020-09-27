@@ -133,7 +133,7 @@ public class MiddleLayer {
                         ((FindLadderRequest) request).target);
                 return new IdentityResponse(identity);
             case AnnounceNeighbor:
-                overlay.announceNeighbor(((AnnounceNeighborRequest) request).newNeighbor);
+                overlay.announceNeighbor(((AnnounceNeighborRequest) request).newNeighbor, ((AnnounceNeighborRequest) request).minLevel);
                 return new AckResponse();
             case IsAvailable:
                 return new BooleanResponse(overlay.isAvailable());
@@ -239,9 +239,9 @@ public class MiddleLayer {
         return ((IdentityResponse) r).identity;
     }
 
-    public void announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor) {
+    public void announceNeighbor(String destinationAddress, int port, SkipNodeIdentity newNeighbor, int minLevel) {
         // Send the request through the underlay
-        send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor));
+        send(destinationAddress, port, new AnnounceNeighborRequest(newNeighbor, minLevel));
     }
 
     public boolean isAvailable(String destinationAddress, int port) {

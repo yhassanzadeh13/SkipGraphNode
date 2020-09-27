@@ -1,13 +1,22 @@
 package skipnode;
 
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InsertionLock {
 
+    // Represents an acquired lock from a neighbor.
+    public static class NeighborInstance {
+        public final SkipNodeIdentity node;
+        public final int minLevel;
+
+        public NeighborInstance(SkipNodeIdentity node, int minLevel) {
+            this.node = node;
+            this.minLevel = minLevel;
+        }
+    }
+
     private final Semaphore locked = new Semaphore(1, true);
-    private SkipNodeIdentity owner = null;
+    public SkipNodeIdentity owner = null;
 
     public boolean startInsertion() {
         boolean acquired = locked.tryAcquire();
