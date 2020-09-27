@@ -65,13 +65,11 @@ public interface SkipNodeInterface {
 
     /**
      * Used by the `searchByNameID` method. Implements a recursive name ID search algorithm.
-     * @param left the current left node.
-     * @param right the current right node.
      * @param target the target name ID.
      * @param level the current level.
      * @return the identity of the node with the given name ID, or the node with the closest name ID.
      */
-    SearchResult searchByNameIDRecursive(SkipNodeIdentity left, SkipNodeIdentity right, String target, int level);
+    SearchResult searchByNameIDRecursive(String target, int level);
 
     /**
      * Updates the SkipNode on the left on the given level to the given SkipNodeIdentity

@@ -122,6 +122,16 @@ class SkipNodeTest {
                 e.printStackTrace();
             }
         }
+        // First, check the correctness and consistency of the lookup tables.
+        // Create a map of num ids to their corresponding lookup tables.
+        Map<Integer, LookupTable> tableMap = g.getNodes().stream()
+                .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
+        // Check the correctness & consistency of the tables.
+        for(SkipNode n : g.getNodes()) {
+            tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
+            tableConsistencyCheck(tableMap, n);
+        }
+        System.out.println("INSERTIONS COMPLETE.");
         StringBuilder sb = new StringBuilder();
         for(SkipNode nd : g.getNodes()){
             sb.append(nd.getIdentity() + " 's Backup Table\n");
@@ -168,14 +178,6 @@ class SkipNodeTest {
         } catch(InterruptedException e) {
             System.err.println("Could not join the thread.");
             e.printStackTrace();
-        }
-        // Create a map of num ids to their corresponding lookup tables.
-        Map<Integer, LookupTable> tableMap = g.getNodes().stream()
-                .collect(Collectors.toMap(SkipNode::getNumID, SkipNode::getLookupTable));
-        // Check the correctness & consistency of the tables.
-        for(SkipNode n : g.getNodes()) {
-            tableCorrectnessCheck(n.getNumID(), n.getNameID(), n.getLookupTable());
-            tableConsistencyCheck(tableMap, n);
         }
     }
 
@@ -285,6 +287,9 @@ class SkipNodeTest {
             for(int j = 0; j < NODES; j++) {
                 SkipNode target = g.getNodes().get(j);
                 SearchResult result = initiator.searchByNameID(target.getNameID());
+                if(!result.result.equals(target.getIdentity())) {
+                    initiator.searchByNameID(target.getNameID());
+                }
                 Assertions.assertEquals(target.getIdentity(), result.result);
             }
         }

@@ -84,9 +84,7 @@ public class MiddleLayer {
             case SearchByNameIDRecursive:
                 // Check whether the node is available for lookups (i.e., already inserted.)
                 if(!overlay.isAvailable()) return new Response(true);
-                result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).left,
-                        ((SearchByNameIDRecursiveRequest) request).right,
-                        ((SearchByNameIDRecursiveRequest) request).target,
+                result = overlay.searchByNameIDRecursive(((SearchByNameIDRecursiveRequest) request).target,
                         ((SearchByNameIDRecursiveRequest) request).level);
                 return new SearchResultResponse(result);
             case SearchByNumID:
@@ -156,10 +154,9 @@ public class MiddleLayer {
         return ((SearchResultResponse) response).result;
     }
 
-    public SearchResult searchByNameIDRecursive(String destinationAddress, int port, SkipNodeIdentity left,
-                                                    SkipNodeIdentity right, String target, int level) {
+    public SearchResult searchByNameIDRecursive(String destinationAddress, int port, String target, int level) {
         // Send the request through the underlay.
-        Response response = this.send(destinationAddress, port, new SearchByNameIDRecursiveRequest(left, right, target, level));
+        Response response = this.send(destinationAddress, port, new SearchByNameIDRecursiveRequest(target, level));
         return ((SearchResultResponse) response).result;
     }
 
