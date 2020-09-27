@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 class SkipNodeTest {
 
     static int STARTING_PORT = 8080;
-    static int NODES = 4;
+    static int NODES = 128;
 
     // In this test I call the increment a lot of times through different threads
     // This tests whether all messages are in face received or not

@@ -31,8 +31,9 @@ public class LocalSkipGraph {
                 .map(numID -> prependToLength(Integer.toBinaryString(numID), nameIDSize))
                 .collect(Collectors.toList());
         // Randomly assign name IDs.
-//        Collections.shuffle(nameIDs);
-        nameIDs = new ArrayList<>(Arrays.asList("11", "00", "01", "10"));
+        Collections.shuffle(nameIDs);
+        nameIDs.forEach(x -> System.out.print(x + " "));
+        System.out.println();
         // Create the identities.
         List<SkipNodeIdentity> identities = new ArrayList<>(size);
         for(int i = 0; i < size; i++) {

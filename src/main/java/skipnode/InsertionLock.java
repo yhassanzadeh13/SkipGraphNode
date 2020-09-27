@@ -29,7 +29,7 @@ public class InsertionLock {
     }
 
     public boolean tryAcquire(SkipNodeIdentity receiver) {
-        boolean acquired = locked.tryAcquire();
+        boolean acquired = (receiver.equals(owner)) || locked.tryAcquire();
         if(acquired) owner = receiver;
         return acquired;
     }
@@ -44,6 +44,7 @@ public class InsertionLock {
 
     public boolean unlockOwned(SkipNodeIdentity owner) {
         if(!this.owner.equals(owner)) return false;
+        this.owner = null;
         locked.release();
         return true;
     }

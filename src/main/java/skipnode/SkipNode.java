@@ -207,7 +207,7 @@ public class SkipNode implements SkipNodeInterface {
         // Naively try to acquire the lock.
         if(!insertionLock.tryAcquire(requester)) {
             System.out.println(getNumID() + " did not hand over the lock to " + requester.getNumID()
-                    + " because it is already given to " + insertionLock.owner.getNumID());
+                    + " because it is already given to " + ((insertionLock.owner == null) ? "itself" : insertionLock.owner.getNumID()));
             return false;
         }
         // After acquiring the lock, make sure that the versions match.
@@ -216,13 +216,15 @@ public class SkipNode implements SkipNodeInterface {
             insertionLock.unlockOwned(requester);
             return false;
         }
-        System.out.println(getNumID() + " (" + this.version + ") is being locked by " + requester.getNumID() + " with provided version " + version);
+        System.out.println(getNumID() + " is being locked by " + requester.getNumID() + " with provided version " + version);
         return true;
     }
 
     @Override
     public boolean unlock(SkipNodeIdentity owner) {
-        return insertionLock.unlockOwned(owner);
+        boolean unlocked = insertionLock.unlockOwned(owner);
+        System.out.println(getNumID() + " has released the lock from " + owner.getNumID() + ": " + unlocked);
+        return unlocked;
     }
 
     /**
@@ -252,10 +254,9 @@ public class SkipNode implements SkipNodeInterface {
             System.out.println(getNumID() + " is returning a findLadder response.");
             return getIdentity();
         }
-        SkipNodeIdentity curr = (direction == 0) ? lookupTable.getLeft(level) : lookupTable.getRight(level);
+        SkipNodeIdentity curr = (direction == 0) ? getLeftNode(level) : getRightNode(level);
         while(!curr.equals(LookupTable.EMPTY_NODE) && SkipNodeIdentity.commonBits(target, curr.getNameID()) <= level) {
             System.out.println(getNumID() + " is in findLadder loop at level " + level + " with " + curr.getNumID());
-            SkipNodeIdentity potentialLadder = (direction == 0) ? lookupTable.getLeft(level) : lookupTable.getRight(level);
             // Try to find a new neighbor, but immediately return if the neighbor is locked.
             curr = (direction == 0) ? middleLayer.getLeftNode(false, curr.getAddress(), curr.getPort(), level)
                     : middleLayer.getRightNode(false, curr.getAddress(), curr.getPort(), level);
